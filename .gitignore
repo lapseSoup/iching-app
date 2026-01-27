@@ -1,0 +1,56 @@
+# Xcode
+*.xcuserstate
+*.xcuserdatad
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+DerivedData/
+build/
+
+# CocoaPods
+Pods/
+Podfile.lock
+*.xcworkspace
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+iOSInjectionProject/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Keys and secrets
+*.p12
+*.cer
+*.pem
+*.mobileprovision
+Secrets.swift
