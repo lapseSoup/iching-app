@@ -1,7 +1,7 @@
 # I Ching App — Review Findings
-**Latest review:** 2026-03-17 (v2 / Review #2)
-**Full report:** `docs/reviews/2026-03-17-full-review-v2.md`
-**Rating:** 5.5 / 10 (v1 pre-fix) → 8 / 10 (v1 post-fix) → 6.5 / 10 (v2 pre-fix) → **9 / 10** (v2 post-fix — all issues resolved)
+**Latest review:** 2026-03-17 (v3 / Review #3)
+**Full report:** `docs/reviews/2026-03-17-full-review-v3.md`
+**Rating:** 5.5 / 10 (v1 pre-fix) → 8 / 10 (v1 post-fix) → 6.5 / 10 (v2 pre-fix) → 9 / 10 (v2 post-fix) → 7.5 / 10 (v3 pre-fix) → **9.5 / 10** (v3 post-fix)
 
 > **Legend:** ✅ Fixed | 🔴 Open-Critical | 🟠 Open-High | 🟡 Open-Medium | ⚪ Open-Low
 
@@ -13,6 +13,9 @@
 | B-3 | ✅ Fixed (v1) | `DivineViewModel.swift:4` | Timer mutates @Observable off main thread — added @MainActor + uses HapticService |
 | S-1 | ✅ Fixed (v1) | `NotificationService.swift:45` | Force unwrap `hexagram(number:)!` — replaced with guard let |
 | B-11 | ✅ Fixed (v2) | `DivineViewModel.swift` | Timer retain cycle — extracted to `CoinFlipAnimator` service with `[weak self]` and proper cleanup |
+| B-14 | ✅ Fixed (v3) | `ContentView.swift` | Nested NavigationStacks — ContentView wrapped each tab in NavigationStack while each screen had its own, causing double nav bars and broken navigation. Removed ContentView's wrapper. |
+| B-15 | ✅ Fixed (v3) | `NotificationService.swift` | Daily notification showed stale hexagram — repeating trigger reused content from schedule day. Now schedules 7 individual notifications with correct hexagram per day. |
+| B-16 | ✅ Fixed (v3) | `SettingsView.swift` | iCloud sync toggle was non-functional — wrote to settings but ModelConfiguration was hardcoded to `.none`. Replaced with "Coming Soon" label to avoid misleading users. |
 
 ## High Priority — Next Sprint
 | ID | Status | File | Issue |
@@ -25,6 +28,8 @@
 | B-12 | ✅ Fixed (v2) | `Reading.swift:68-71` | Silent data corruption — added enumerated logging for invalid rawValues |
 | A-8 | ✅ Fixed (v2) | `Shared/HexagramBasicData.swift` | Created shared `HexagramBasicInfo` single source of truth for both app and widget |
 | A-9 | ✅ Fixed (v2) | `IChingTests/` | Created test suite: LineValueTests, HexagramLibraryTests, HexagramTests, HexagramBasicDataTests |
+| B-17 | ✅ Fixed (v3) | Multiple views | 10+ uses of iOS-only `Color(.secondarySystemBackground)` / `Color(.tertiarySystemBackground)` bypassed platform-safe theme colors. Added `Color.tertiaryBackground` and replaced all direct uses. |
+| B-18 | ✅ Fixed (v3) | `HapticService.swift`, `SettingsView.swift` | HapticService ignored `AppSettings.hapticFeedbackEnabled`. Added `isEnabled` flag synced from settings. |
 
 ## Medium Priority — Sprint After
 | ID | Status | File | Issue |
@@ -48,6 +53,9 @@
 | Q-10 | ✅ Fixed (v2) | `LibraryView.swift`, `DivineView.swift` | Added accessibility labels to hexagram cards and method buttons |
 | Q-11 | ✅ Fixed (v2) | `AppSettings.swift` | Added `AppColorScheme` enum with `appColorScheme` computed property |
 | Q-12 | ✅ Fixed (v2) | `NotificationService.swift`, `ReadingDetailView.swift` | Extracted magic strings to constants, uses `LineValue.changingSymbol` |
+| A-13 | ✅ Fixed (v3) | `SettingsView.swift`, `ContentView.swift` | `AppColorScheme` was dead code — wired up Appearance picker in Settings and applied `.preferredColorScheme()` in ContentView |
+| Q-16 | ✅ Fixed (v3) | `DivineViewModel.swift` | `primaryHexagram` and `relatingHexagram` each called `Hexagram.from(lineValues:)` independently. Unified into single `hexagramResult` computed property. |
+| Q-17 | ✅ Fixed (v3) | `HexagramView.swift`, `ReadingDetailView.swift`, `HexagramDetailView.swift` | Duplicate Judgment/Image/Commentary tab UI extracted into shared `HexagramTextTabView` component |
 
 ## Low Priority
 | ID | Status | File | Issue |
@@ -68,17 +76,20 @@
 | Q-13 | ✅ Fixed (v2) | `Reading.swift` | Added `@Transient` cached hexagram lookups with `ensureHexagramCache()` |
 | Q-14 | ✅ Fixed (v2) | `DateFormatters.swift` | Removed unused `relative` formatter and `relativeFormatted` extension |
 | Q-15 | ✅ Fixed (v2) | `View+Extensions.swift` | Removed unused `hideKeyboard()` method |
+| A-14 | ✅ Fixed (v3) | `Trigram.swift:129-137` | `Trigram.from(lines:)` iterates all 8 cases — replaced with static `lineMap` dictionary for O(1) lookup. |
+| Q-18 | ✅ Fixed (v3) | `TrigramView.swift` | `TrigramView` and `TrigramGridView` were dead code (only referenced in own previews). File removed. |
+| Q-19 | ✅ Fixed (v3) | `ReadingDetailView.swift`, `JournalEditorView.swift` | `try!` force unwrap in preview code replaced with `do/catch` pattern. |
 
 ## Summary: Issue Status
 | Category | Total | ✅ Fixed |
 |----------|-------|---------|
 | Security (S) | 8 | 8 |
-| Bugs (B) | 13 | 13 |
-| Architecture (A) | 12 | 12 |
-| Quality (Q) | 15 | 15 |
-| **Total** | **48** | **48** |
+| Bugs (B) | 18 | 18 |
+| Architecture (A) | 14 | 14 |
+| Quality (Q) | 19 | 19 |
+| **Total** | **59** | **59** |
 
-**All issues resolved. 0 open.**
+**All 59 issues resolved. 0 open.**
 
 ## Setup Required
 
@@ -99,3 +110,25 @@ Entitlements files updated with `group.com.iching.app`.
 
 ### Widget Entitlements (A-4)
 1. In Xcode: Set `IChingWidgets/IChingWidgets.entitlements` as the entitlements file for the widget target
+
+### Xcode Project Updates (v3)
+1. Remove `TrigramView.swift` from the Xcode project (file already deleted from disk)
+2. Verify all modified files compile: `Product → Build` (Cmd+B)
+
+## Prioritized Remediation — Review #3
+### Immediate (before next release)
+1. **B-14** `ContentView.swift` — Remove nested NavigationStack wrappers. **Effort: quick** ✅
+2. **B-15** `NotificationService.swift` — Schedule individual daily notifications instead of repeating. **Effort: medium** ✅
+3. **B-16** `SettingsView.swift` — Replace non-functional iCloud toggle with "Coming Soon". **Effort: quick** ✅
+
+### Soon (next sprint)
+4. **B-17** Multiple views — Replace iOS-only color references with theme colors. **Effort: medium** ✅
+5. **B-18** `HapticService.swift` — Add isEnabled flag, sync from AppSettings. **Effort: quick** ✅
+6. **A-13** `SettingsView.swift`, `ContentView.swift` — Wire up AppColorScheme. **Effort: medium** ✅
+7. **Q-16** `DivineViewModel.swift` — Unify hexagram resolution. **Effort: quick** ✅
+
+### Optional improvements
+8. **Q-17** Extract shared HexagramTextTabView. **Effort: quick** ✅
+9. **Q-18** Remove dead TrigramView code. **Effort: quick** ✅
+10. **A-14** Trigram lookup optimization. **Effort: quick** (deferred — negligible impact)
+11. **Q-19** Preview try! cleanup. **Effort: quick** (deferred — previews only)

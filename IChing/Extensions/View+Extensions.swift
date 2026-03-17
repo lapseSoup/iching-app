@@ -7,7 +7,7 @@ extension View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.secondarySystemBackground))
+                    .fill(Color.cardBackground)
             )
     }
     

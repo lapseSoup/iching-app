@@ -35,6 +35,9 @@ final class NotificationService {
         isAuthorized = settings.authorizationStatus == .authorized
     }
 
+    /// Schedules daily hexagram notifications for the next 7 days.
+    /// Each day gets its own notification with the correct hexagram for that date.
+    /// Call this on app launch and whenever the notification time changes.
     func scheduleDailyHexagram(at time: Date) async {
         guard isAuthorized else {
             let granted = await requestAuthorization()
@@ -44,51 +47,51 @@ final class NotificationService {
         // Cancel existing daily notifications
         cancelDailyNotifications()
 
-        // Use shared date-based seeding for consistent daily hexagram (matches widget)
-        let hexagramId = HexagramBasicInfo.dailyHexagramId(for: Date())
-        guard let hexagram = HexagramLibrary.shared.hexagram(number: hexagramId) else {
-            return
-        }
-
-        // Create notification content
-        let content = UNMutableNotificationContent()
-        content.title = "Daily Hexagram"
-        content.subtitle = "\(hexagram.id). \(hexagram.englishName)"
-        content.body = "\(hexagram.chineseName) (\(hexagram.pinyin)) - Tap to explore today's wisdom."
-        content.sound = .default
-
-        // Extract hour and minute from the time
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.hour, .minute], from: time)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
 
-        var dateComponents = DateComponents()
-        dateComponents.hour = components.hour
-        dateComponents.minute = components.minute
-        dateComponents.second = 0
+        // Schedule one notification per day for the next 7 days,
+        // each with the correct hexagram for that specific date.
+        for dayOffset in 0..<7 {
+            guard let targetDate = calendar.date(byAdding: .day, value: dayOffset, to: Date()) else { continue }
 
-        // Create trigger for daily repetition
-        let trigger = UNCalendarNotificationTrigger(
-            dateMatching: dateComponents,
-            repeats: true
-        )
+            let hexagramId = HexagramBasicInfo.dailyHexagramId(for: targetDate)
+            guard let hexagram = HexagramLibrary.shared.hexagram(number: hexagramId) else { continue }
 
-        // Create request
-        let request = UNNotificationRequest(
-            identifier: Self.dailyHexagramIdentifier,
-            content: content,
-            trigger: trigger
-        )
+            let content = UNMutableNotificationContent()
+            content.title = "Daily Hexagram"
+            content.subtitle = "\(hexagram.id). \(hexagram.englishName)"
+            content.body = "\(hexagram.chineseName) (\(hexagram.pinyin)) - Tap to explore today's wisdom."
+            content.sound = .default
 
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-        } catch {
-            Self.logger.error("Failed to schedule daily hexagram: \(error.localizedDescription, privacy: .public)")
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: targetDate)
+            dateComponents.hour = timeComponents.hour
+            dateComponents.minute = timeComponents.minute
+            dateComponents.second = 0
+
+            let trigger = UNCalendarNotificationTrigger(
+                dateMatching: dateComponents,
+                repeats: false
+            )
+
+            let request = UNNotificationRequest(
+                identifier: "\(Self.dailyHexagramIdentifier)-\(dayOffset)",
+                content: content,
+                trigger: trigger
+            )
+
+            do {
+                try await UNUserNotificationCenter.current().add(request)
+            } catch {
+                Self.logger.error("Failed to schedule daily hexagram for day \(dayOffset): \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
     func cancelDailyNotifications() {
+        let identifiers = (0..<7).map { "\(Self.dailyHexagramIdentifier)-\($0)" }
         UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: [Self.dailyHexagramIdentifier]
+            withIdentifiers: identifiers
         )
     }
 }

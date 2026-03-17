@@ -34,11 +34,20 @@ struct SettingsView: View {
                 }
                 
                 Section("Display") {
+                    Picker("Appearance", selection: Binding(
+                        get: { settings.appColorScheme },
+                        set: { settings.appColorScheme = $0 }
+                    )) {
+                        ForEach(AppColorScheme.allCases, id: \.self) { scheme in
+                            Text(scheme.displayName).tag(scheme)
+                        }
+                    }
+
                     Toggle("Show Chinese Characters", isOn: Binding(
                         get: { settings.showChineseCharacters },
                         set: { settings.showChineseCharacters = $0 }
                     ))
-                    
+
                     Toggle("Show Pinyin", isOn: Binding(
                         get: { settings.showPinyin },
                         set: { settings.showPinyin = $0 }
@@ -49,7 +58,10 @@ struct SettingsView: View {
                     #if os(iOS)
                     Toggle("Haptic Feedback", isOn: Binding(
                         get: { settings.hapticFeedbackEnabled },
-                        set: { settings.hapticFeedbackEnabled = $0 }
+                        set: {
+                            settings.hapticFeedbackEnabled = $0
+                            HapticService.isEnabled = $0
+                        }
                     ))
                     #endif
                     
@@ -60,22 +72,17 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Toggle("iCloud Sync", isOn: Binding(
-                        get: { settings.iCloudSyncEnabled },
-                        set: { settings.iCloudSyncEnabled = $0 }
-                    ))
-
-                    if settings.iCloudSyncEnabled {
-                        Text("Journal entries and readings will sync across your devices via iCloud. Data is stored in your personal iCloud account.")
-                            .font(.caption)
+                    HStack {
+                        Label("iCloud Sync", systemImage: "icloud")
+                        Spacer()
+                        Text("Coming Soon")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("Privacy & Data")
                 } footer: {
-                    if !settings.iCloudSyncEnabled {
-                        Text("All data stays on this device only.")
-                    }
+                    Text("All data stays on this device only. iCloud sync is planned for a future update.")
                 }
 
                 Section("About") {
@@ -109,6 +116,7 @@ struct SettingsView: View {
                     modelContext.insert(AppSettings())
                     hasEnsuredSettings = true
                 }
+                HapticService.isEnabled = settings.hapticFeedbackEnabled
             }
         }
     }

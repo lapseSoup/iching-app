@@ -3,12 +3,14 @@ import SwiftData
 
 struct DivineView: View {
     @Environment(\.modelContext) private var modelContext
+    @Binding var showingSettings: Bool
     @State private var viewModel: DivineViewModel
     @State private var showingMethodPicker = false
     @State private var navigateToReading: Reading?
 
-    init(viewModel: DivineViewModel = DivineViewModel()) {
+    init(viewModel: DivineViewModel = DivineViewModel(), showingSettings: Binding<Bool> = .constant(false)) {
         _viewModel = State(initialValue: viewModel)
+        _showingSettings = showingSettings
     }
     
     var body: some View {
@@ -37,6 +39,13 @@ struct DivineView: View {
             }
             .navigationTitle("Divine")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
             .navigationDestination(item: $navigateToReading) { reading in
                 ReadingDetailView(reading: reading)
             }

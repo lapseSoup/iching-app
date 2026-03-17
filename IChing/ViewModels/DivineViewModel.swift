@@ -34,16 +34,14 @@ final class DivineViewModel {
         }
     }
 
-    // Result
-    var primaryHexagram: Hexagram? {
+    // Result (computed once, both derived from same resolution)
+    private var hexagramResult: (primary: Hexagram, relating: Hexagram?)? {
         guard completedLines.count == 6 else { return nil }
-        return Hexagram.from(lineValues: completedLines)?.primary
+        return Hexagram.from(lineValues: completedLines)
     }
 
-    var relatingHexagram: Hexagram? {
-        guard completedLines.count == 6 else { return nil }
-        return Hexagram.from(lineValues: completedLines)?.relating
-    }
+    var primaryHexagram: Hexagram? { hexagramResult?.primary }
+    var relatingHexagram: Hexagram? { hexagramResult?.relating }
 
     var changingLinePositions: Set<Int> {
         Set(completedLines.enumerated()

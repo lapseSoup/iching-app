@@ -89,7 +89,7 @@ struct ReadingDetailView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color.cardBackground)
         )
     }
     
@@ -126,7 +126,7 @@ struct ReadingDetailView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.tertiarySystemBackground))
+                            .fill(Color.tertiaryBackground)
                     )
                 }
             }
@@ -171,7 +171,7 @@ struct ReadingDetailView: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(.secondarySystemBackground))
+                            .fill(Color.cardBackground)
                     )
                 }
                 .buttonStyle(.plain)
@@ -183,36 +183,11 @@ struct ReadingDetailView: View {
     }
     
     // MARK: - Tab Section (Judgment, Image, Commentary)
-    
+
     private var tabSection: some View {
-        VStack(spacing: 16) {
-            Picker("Section", selection: $selectedTab) {
-                Text("Judgment").tag(0)
-                Text("Image").tag(1)
-                Text("Commentary").tag(2)
-            }
-            .pickerStyle(.segmented)
-            
+        Group {
             if let hexagram = reading.primaryHexagram {
-                VStack(alignment: .leading, spacing: 12) {
-                    switch selectedTab {
-                    case 0:
-                        Text(hexagram.judgment)
-                            .font(.body)
-                    case 1:
-                        Text(hexagram.image)
-                            .font(.body)
-                    default:
-                        Text(hexagram.commentary)
-                            .font(.body)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.secondarySystemBackground))
-                )
+                HexagramTextTabView(hexagram: hexagram, selectedTab: $selectedTab)
             }
         }
     }
@@ -256,12 +231,16 @@ struct ReadingDetailView: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: Reading.self, configurations: .init(isStoredInMemoryOnly: true))
-    let reading = Reading(question: "What should I focus on?", lines: [.youngYang, .oldYin, .youngYin, .youngYang, .oldYang, .youngYin])
-    container.mainContext.insert(reading)
-    
-    return NavigationStack {
-        ReadingDetailView(reading: reading)
+    do {
+        let container = try ModelContainer(for: Reading.self, configurations: .init(isStoredInMemoryOnly: true))
+        let reading = Reading(question: "What should I focus on?", lines: [.youngYang, .oldYin, .youngYin, .youngYang, .oldYang, .youngYin])
+        container.mainContext.insert(reading)
+
+        return NavigationStack {
+            ReadingDetailView(reading: reading)
+        }
+        .modelContainer(container)
+    } catch {
+        return Text("Preview failed: \(error.localizedDescription)")
     }
-    .modelContainer(container)
 }

@@ -3,9 +3,14 @@ import SwiftData
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
+    @Binding var showingSettings: Bool
     @Query(sort: \Reading.createdAt, order: .reverse) private var readings: [Reading]
-    
+
     @State private var searchText = ""
+
+    init(showingSettings: Binding<Bool> = .constant(false)) {
+        _showingSettings = showingSettings
+    }
     
     private var filteredReadings: [Reading] {
         if searchText.isEmpty {
@@ -55,6 +60,13 @@ struct HistoryView: View {
             }
             .navigationTitle("History")
             .searchable(text: $searchText, prompt: "Search readings")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
         }
     }
     

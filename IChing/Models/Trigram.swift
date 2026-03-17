@@ -125,14 +125,18 @@ enum Trigram: Int, Codable, CaseIterable, Identifiable {
         }
     }
     
+    /// O(1) lookup from three lines (bottom to top)
+    private static let lineMap: [[Bool]: Trigram] = {
+        var map = [[Bool]: Trigram]()
+        for trigram in Trigram.allCases {
+            map[trigram.lines] = trigram
+        }
+        return map
+    }()
+
     /// Create trigram from three lines (bottom to top)
     static func from(lines: [Bool]) -> Trigram? {
         guard lines.count == 3 else { return nil }
-        for trigram in Trigram.allCases {
-            if trigram.lines == lines {
-                return trigram
-            }
-        }
-        return nil
+        return lineMap[lines]
     }
 }

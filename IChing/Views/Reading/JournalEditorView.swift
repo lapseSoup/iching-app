@@ -84,7 +84,7 @@ struct JournalEditorView: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(selectedMood == mood ? 
                           Color.accentColor.opacity(0.2) : 
-                          Color(.tertiarySystemBackground))
+                          Color.tertiaryBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -164,7 +164,7 @@ struct JournalEntryDetailView: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(.secondarySystemBackground))
+                                .fill(Color.cardBackground)
                         )
                     }
                     .buttonStyle(.plain)
@@ -209,12 +209,16 @@ struct JournalEntryDetailView: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: Reading.self, JournalEntry.self, configurations: .init(isStoredInMemoryOnly: true))
-    let reading = Reading(question: "Test", lines: [.youngYang, .youngYin, .youngYang, .youngYin, .youngYang, .youngYin])
-    container.mainContext.insert(reading)
-    
-    return NavigationStack {
-        JournalEditorView(reading: reading)
+    do {
+        let container = try ModelContainer(for: Reading.self, JournalEntry.self, configurations: .init(isStoredInMemoryOnly: true))
+        let reading = Reading(question: "Test", lines: [.youngYang, .youngYin, .youngYang, .youngYin, .youngYang, .youngYin])
+        container.mainContext.insert(reading)
+
+        return NavigationStack {
+            JournalEditorView(reading: reading)
+        }
+        .modelContainer(container)
+    } catch {
+        return Text("Preview failed: \(error.localizedDescription)")
     }
-    .modelContainer(container)
 }

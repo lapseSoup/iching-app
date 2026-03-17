@@ -21,7 +21,7 @@ struct ManualEntryView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.secondarySystemBackground))
+                        .fill(Color.cardBackground)
                 )
                 
                 legendView
@@ -109,7 +109,7 @@ struct ManualEntryView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.tertiarySystemBackground))
+                .fill(Color.tertiaryBackground)
         )
     }
 }

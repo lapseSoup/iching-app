@@ -13,9 +13,11 @@ extension Color {
     /// Background variants
     #if os(macOS)
     static let cardBackground = Color(nsColor: .controlBackgroundColor)
+    static let tertiaryBackground = Color(nsColor: .underPageBackgroundColor)
     static let groupedBackground = Color(nsColor: .windowBackgroundColor)
     #else
     static let cardBackground = Color(.secondarySystemBackground)
+    static let tertiaryBackground = Color(.tertiarySystemBackground)
     static let groupedBackground = Color(.systemGroupedBackground)
     #endif
 }

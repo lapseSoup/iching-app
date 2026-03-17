@@ -117,6 +117,57 @@ struct HexagramBuildingView: View {
     }
 }
 
+/// Reusable Judgment / Image / Commentary tab section for a hexagram
+struct HexagramTextTabView: View {
+    let hexagram: Hexagram
+    @Binding var selectedTab: Int
+    var showSectionHeaders: Bool = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Picker("Section", selection: $selectedTab) {
+                Text("Judgment").tag(0)
+                Text("Image").tag(1)
+                Text("Commentary").tag(2)
+            }
+            .pickerStyle(.segmented)
+
+            VStack(alignment: .leading, spacing: 12) {
+                if showSectionHeaders {
+                    Text(sectionTitle)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(sectionText)
+                    .font(.body)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.cardBackground)
+            )
+        }
+    }
+
+    private var sectionTitle: String {
+        switch selectedTab {
+        case 0: return "The Judgment"
+        case 1: return "The Image"
+        default: return "Commentary"
+        }
+    }
+
+    private var sectionText: String {
+        switch selectedTab {
+        case 0: return hexagram.judgment
+        case 1: return hexagram.image
+        default: return hexagram.commentary
+        }
+    }
+}
+
 #Preview("Hexagram View") {
     VStack(spacing: 40) {
         HexagramView(

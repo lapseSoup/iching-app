@@ -1,8 +1,13 @@
 import SwiftUI
 
 struct LibraryView: View {
+    @Binding var showingSettings: Bool
     @State private var searchText = ""
     @State private var selectedHexagram: Hexagram?
+
+    init(showingSettings: Binding<Bool> = .constant(false)) {
+        _showingSettings = showingSettings
+    }
     
     private let hexagrams = HexagramLibrary.shared.hexagrams
     
@@ -36,6 +41,13 @@ struct LibraryView: View {
             }
             .navigationTitle("Library")
             .searchable(text: $searchText, prompt: "Search hexagrams")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
             .navigationDestination(for: Hexagram.self) { hexagram in
                 HexagramDetailView(hexagram: hexagram)
             }
@@ -69,7 +81,7 @@ struct HexagramCard: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color.cardBackground)
         )
     }
 }

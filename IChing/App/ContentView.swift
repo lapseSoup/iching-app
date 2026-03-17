@@ -3,8 +3,18 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var settingsArray: [AppSettings]
     @State private var selectedTab: Tab = .divine
     @State private var showingSettings = false
+
+    private var preferredColorScheme: ColorScheme? {
+        guard let settings = settingsArray.first else { return nil }
+        switch settings.appColorScheme {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
     
     enum Tab: String, CaseIterable {
         case divine = "Divine"
@@ -26,25 +36,15 @@ struct ContentView: View {
         #if os(iOS)
         TabView(selection: $selectedTab) {
             ForEach(Tab.allCases, id: \.self) { tab in
-                NavigationStack {
-                    tabContent(for: tab)
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button {
-                                    showingSettings = true
-                                } label: {
-                                    Image(systemName: "gearshape")
-                                }
-                            }
-                        }
-                }
-                .tabItem {
-                    Label(tab.rawValue, systemImage: tab.icon)
-                }
-                .tag(tab)
+                tabContent(for: tab)
+                    .tabItem {
+                        Label(tab.rawValue, systemImage: tab.icon)
+                    }
+                    .tag(tab)
             }
         }
         .tint(Color.accentColor)
+        .preferredColorScheme(preferredColorScheme)
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
@@ -58,16 +58,8 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
         } detail: {
             tabContent(for: selectedTab)
-                .toolbar {
-                    ToolbarItem(placement: .automatic) {
-                        Button {
-                            showingSettings = true
-                        } label: {
-                            Image(systemName: "gearshape")
-                        }
-                    }
-                }
         }
+        .preferredColorScheme(preferredColorScheme)
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
@@ -78,13 +70,13 @@ struct ContentView: View {
     private func tabContent(for tab: Tab) -> some View {
         switch tab {
         case .divine:
-            DivineView()
+            DivineView(showingSettings: $showingSettings)
         case .library:
-            LibraryView()
+            LibraryView(showingSettings: $showingSettings)
         case .history:
-            HistoryView()
+            HistoryView(showingSettings: $showingSettings)
         case .journal:
-            JournalListView()
+            JournalListView(showingSettings: $showingSettings)
         }
     }
 }

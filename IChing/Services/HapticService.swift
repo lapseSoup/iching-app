@@ -4,7 +4,11 @@ import UIKit
 #endif
 
 enum HapticService {
+    /// Set to false to disable all haptic feedback (respects AppSettings.hapticFeedbackEnabled)
+    static var isEnabled: Bool = true
+
     static func impact(_ style: ImpactStyle) {
+        guard isEnabled else { return }
         #if os(iOS)
         let generator: UIImpactFeedbackGenerator
         switch style {
@@ -24,6 +28,7 @@ enum HapticService {
     }
     
     static func notification(_ type: NotificationType) {
+        guard isEnabled else { return }
         #if os(iOS)
         let generator = UINotificationFeedbackGenerator()
         switch type {
@@ -38,6 +43,7 @@ enum HapticService {
     }
     
     static func selection() {
+        guard isEnabled else { return }
         #if os(iOS)
         let generator = UISelectionFeedbackGenerator()
         generator.selectionChanged()

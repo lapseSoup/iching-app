@@ -45,7 +45,7 @@ struct HexagramDetailView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color.cardBackground)
         )
     }
     
@@ -80,50 +80,14 @@ struct HexagramDetailView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.tertiarySystemBackground))
+                .fill(Color.tertiaryBackground)
         )
     }
     
     // MARK: - Tab Section
-    
+
     private var tabSection: some View {
-        VStack(spacing: 16) {
-            Picker("Section", selection: $selectedTab) {
-                Text("Judgment").tag(0)
-                Text("Image").tag(1)
-                Text("Commentary").tag(2)
-            }
-            .pickerStyle(.segmented)
-            
-            VStack(alignment: .leading, spacing: 12) {
-                switch selectedTab {
-                case 0:
-                    Text("The Judgment")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Text(hexagram.judgment)
-                        .font(.body)
-                case 1:
-                    Text("The Image")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Text(hexagram.image)
-                        .font(.body)
-                default:
-                    Text("Commentary")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Text(hexagram.commentary)
-                        .font(.body)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.secondarySystemBackground))
-            )
-        }
+        HexagramTextTabView(hexagram: hexagram, selectedTab: $selectedTab, showSectionHeaders: true)
     }
     
     // MARK: - Lines Section
@@ -158,7 +122,7 @@ struct HexagramDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.tertiarySystemBackground))
+                        .fill(Color.tertiaryBackground)
                 )
             }
         }

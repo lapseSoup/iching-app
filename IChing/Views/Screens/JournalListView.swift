@@ -3,9 +3,14 @@ import SwiftData
 
 struct JournalListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Binding var showingSettings: Bool
     @Query(sort: \JournalEntry.createdAt, order: .reverse) private var entries: [JournalEntry]
-    
+
     @State private var searchText = ""
+
+    init(showingSettings: Binding<Bool> = .constant(false)) {
+        _showingSettings = showingSettings
+    }
     
     private var filteredEntries: [JournalEntry] {
         if searchText.isEmpty {
@@ -27,6 +32,13 @@ struct JournalListView: View {
             }
             .navigationTitle("Journal")
             .searchable(text: $searchText, prompt: "Search journal")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
         }
     }
     
