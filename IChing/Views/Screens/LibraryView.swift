@@ -29,6 +29,7 @@ struct LibraryView: View {
                             HexagramCard(hexagram: hexagram)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Hexagram \(hexagram.id), \(hexagram.englishName), \(hexagram.chineseName)")
                     }
                 }
                 .padding()

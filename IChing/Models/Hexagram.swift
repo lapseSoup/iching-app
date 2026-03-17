@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents one of the 64 hexagrams of the I Ching
-struct Hexagram: Identifiable, Codable, Equatable {
+struct Hexagram: Identifiable, Codable, Hashable {
     let id: Int // 1-64, King Wen sequence
     let chineseName: String
     let pinyin: String
@@ -46,6 +46,10 @@ struct Hexagram: Identifiable, Codable, Equatable {
     
     static func == (lhs: Hexagram, rhs: Hexagram) -> Bool {
         lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 

@@ -110,7 +110,7 @@ struct ReadingDetailView: View {
                                 .font(.subheadline.weight(.semibold))
                             
                             let line = reading.lines[position - 1]
-                            Text(line.value == .oldYang ? "○ (Yang → Yin)" : "× (Yin → Yang)")
+                            Text("\(line.value.changingSymbol ?? "") (\(line.value == .oldYang ? "Yang → Yin" : "Yin → Yang"))")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

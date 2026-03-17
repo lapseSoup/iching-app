@@ -59,6 +59,25 @@ struct SettingsView: View {
                     ))
                 }
                 
+                Section {
+                    Toggle("iCloud Sync", isOn: Binding(
+                        get: { settings.iCloudSyncEnabled },
+                        set: { settings.iCloudSyncEnabled = $0 }
+                    ))
+
+                    if settings.iCloudSyncEnabled {
+                        Text("Journal entries and readings will sync across your devices via iCloud. Data is stored in your personal iCloud account.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Privacy & Data")
+                } footer: {
+                    if !settings.iCloudSyncEnabled {
+                        Text("All data stays on this device only.")
+                    }
+                }
+
                 Section("About") {
                     HStack {
                         Text("Version")

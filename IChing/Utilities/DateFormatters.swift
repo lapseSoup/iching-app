@@ -35,27 +35,18 @@ enum DateFormatters {
         return formatter
     }()
     
-    static let relative: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return formatter
-    }()
 }
 
 extension Date {
     var shortFormatted: String {
         DateFormatters.shortDate.string(from: self)
     }
-    
+
     var longFormatted: String {
         DateFormatters.longDate.string(from: self)
     }
-    
+
     var timeFormatted: String {
         DateFormatters.timeOnly.string(from: self)
-    }
-    
-    var relativeFormatted: String {
-        DateFormatters.relative.localizedString(for: self, relativeTo: Date())
     }
 }

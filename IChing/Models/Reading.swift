@@ -8,29 +8,37 @@ final class Reading {
     var createdAt: Date
     var question: String
     var notes: String
-    
-    // Line values stored as raw integers (6, 7, 8, or 9)
+
+    // Line values stored as array of raw integers (6, 7, 8, or 9), bottom to top
+    var lineValuesRaw: [Int]
+
+    // Legacy fields kept for migration compatibility — not used in new code
     var lineValue1: Int
     var lineValue2: Int
     var lineValue3: Int
     var lineValue4: Int
     var lineValue5: Int
     var lineValue6: Int
-    
+
     // Hexagram IDs for quick reference
     var primaryHexagramId: Int
     var relatingHexagramId: Int? // nil if no changing lines
-    
+
     // Journal entries for this reading
-    @Relationship(deleteRule: .cascade, inverse: \JournalEntry.reading)
+    @Relationship(deleteRule: .nullify, inverse: \JournalEntry.reading)
     var journalEntries: [JournalEntry]
-    
+
     // Method of divination
     var method: ReadingMethod
-    
+
     // Whether this is the daily hexagram
     var isDailyReading: Bool
-    
+
+    // Cached hexagram lookups (transient — not persisted)
+    @Transient private var _cachedPrimary: Hexagram?
+    @Transient private var _cachedRelating: Hexagram?
+    @Transient private var _hexagramsCached = false
+
     init(
         question: String = "",
         lines: [LineValue],
@@ -44,60 +52,90 @@ final class Reading {
         self.method = method
         self.isDailyReading = isDailyReading
         self.journalEntries = []
-        
-        // Store line values
+
+        // Store as normalized array
+        self.lineValuesRaw = lines.map(\.rawValue)
+
+        // Legacy fields (kept for backward compatibility)
         self.lineValue1 = lines.indices.contains(0) ? lines[0].rawValue : 7
         self.lineValue2 = lines.indices.contains(1) ? lines[1].rawValue : 7
         self.lineValue3 = lines.indices.contains(2) ? lines[2].rawValue : 7
         self.lineValue4 = lines.indices.contains(3) ? lines[3].rawValue : 7
         self.lineValue5 = lines.indices.contains(4) ? lines[4].rawValue : 7
         self.lineValue6 = lines.indices.contains(5) ? lines[5].rawValue : 7
-        
+
         // Calculate hexagram IDs
         let lineVals = self.lineValues
         if let result = Hexagram.from(lineValues: lineVals) {
             self.primaryHexagramId = result.primary.id
             self.relatingHexagramId = result.relating?.id
         } else {
+            #if DEBUG
+            print("Warning: Could not resolve hexagram from lines \(lineVals.map(\.rawValue)), defaulting to hexagram 1")
+            #endif
             self.primaryHexagramId = 1
             self.relatingHexagramId = nil
         }
     }
-    
-    /// Reconstructs line values from stored integers
+
+    /// Reconstructs line values from stored data.
+    /// Prefers the normalized array; falls back to legacy individual fields.
     var lineValues: [LineValue] {
-        [lineValue1, lineValue2, lineValue3, lineValue4, lineValue5, lineValue6]
-            .map { LineValue(rawValue: $0) ?? .youngYang }
+        let raw: [Int]
+        if !lineValuesRaw.isEmpty {
+            raw = lineValuesRaw
+        } else {
+            raw = [lineValue1, lineValue2, lineValue3, lineValue4, lineValue5, lineValue6]
+        }
+        return raw.enumerated().map { index, rawVal in
+            guard let value = LineValue(rawValue: rawVal) else {
+                #if DEBUG
+                print("Warning: Invalid line value \(rawVal) at position \(index + 1), defaulting to youngYang")
+                #endif
+                return .youngYang
+            }
+            return value
+        }
     }
-    
+
     /// Lines as Line objects
     var lines: [Line] {
         lineValues.enumerated().map { index, value in
             Line(position: index + 1, value: value)
         }
     }
-    
+
     /// Positions of changing lines (1-6)
     var changingLinePositions: Set<Int> {
         Set(lines.filter { $0.isChanging }.map { $0.position })
     }
-    
+
     /// Whether this reading has any changing lines
     var hasChangingLines: Bool {
         !changingLinePositions.isEmpty
     }
-    
-    /// The primary hexagram
+
+    /// The primary hexagram (cached after first access)
     var primaryHexagram: Hexagram? {
-        HexagramLibrary.shared.hexagram(number: primaryHexagramId)
+        ensureHexagramCache()
+        return _cachedPrimary
     }
-    
-    /// The relating/transformed hexagram (if changing lines exist)
+
+    /// The relating/transformed hexagram (cached after first access)
     var relatingHexagram: Hexagram? {
-        guard let id = relatingHexagramId else { return nil }
-        return HexagramLibrary.shared.hexagram(number: id)
+        ensureHexagramCache()
+        return _cachedRelating
     }
-    
+
+    private func ensureHexagramCache() {
+        guard !_hexagramsCached else { return }
+        _cachedPrimary = HexagramLibrary.shared.hexagram(number: primaryHexagramId)
+        if let relId = relatingHexagramId {
+            _cachedRelating = HexagramLibrary.shared.hexagram(number: relId)
+        }
+        _hexagramsCached = true
+    }
+
     /// Formatted date for display
     var formattedDate: String {
         DateFormatters.longDate.string(from: createdAt)

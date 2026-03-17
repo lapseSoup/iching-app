@@ -27,12 +27,6 @@ extension View {
         }
     }
     
-    /// Apply platform-specific modifiers
-    #if os(iOS)
-    func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
-    #endif
 }
 
 // MARK: - Animation Extensions

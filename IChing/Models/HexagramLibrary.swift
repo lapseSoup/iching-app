@@ -1,8 +1,16 @@
 import Foundation
 
+/// Protocol for hexagram data access — enables dependency injection and testing
+protocol HexagramRepository {
+    func hexagram(number: Int) -> Hexagram?
+    func hexagram(forLines lines: [Bool]) -> Hexagram?
+    func hexagram(upper: Trigram, lower: Trigram) -> Hexagram?
+    var hexagrams: [Hexagram] { get }
+}
+
 /// The complete library of all 64 I Ching hexagrams
-final class HexagramLibrary {
-    static let shared = HexagramLibrary()
+final class HexagramLibrary: HexagramRepository {
+    static let shared: HexagramRepository = HexagramLibrary()
     
     private(set) var hexagrams: [Hexagram] = []
     private var lineToHexagramMap: [String: Int] = [:]

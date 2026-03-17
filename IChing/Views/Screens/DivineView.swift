@@ -3,9 +3,13 @@ import SwiftData
 
 struct DivineView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var viewModel = DivineViewModel()
+    @State private var viewModel: DivineViewModel
     @State private var showingMethodPicker = false
     @State private var navigateToReading: Reading?
+
+    init(viewModel: DivineViewModel = DivineViewModel()) {
+        _viewModel = State(initialValue: viewModel)
+    }
     
     var body: some View {
         NavigationStack {
@@ -108,11 +112,13 @@ struct DivineView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(viewModel.selectedMethod == method ? 
+                    .stroke(viewModel.selectedMethod == method ?
                             Color.accentColor : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(title) method")
+        .accessibilityAddTraits(viewModel.selectedMethod == method ? .isSelected : [])
     }
     
     // MARK: - Start Button

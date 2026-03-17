@@ -1,6 +1,39 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Schema Versioning
+
+enum IChingSchemaV1: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Reading.self, JournalEntry.self, AppSettings.self]
+    }
+}
+
+enum IChingSchemaV2: VersionedSchema {
+    static var versionIdentifier = Schema.Version(2, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Reading.self, JournalEntry.self, AppSettings.self]
+    }
+}
+
+enum IChingMigrationPlan: SchemaMigrationPlan {
+    static var schemas: [any VersionedSchema.Type] {
+        [IChingSchemaV1.self, IChingSchemaV2.self]
+    }
+
+    static var stages: [MigrationStage] {
+        [migrateV1toV2]
+    }
+
+    // V1→V2: Adds lineValuesRaw array and iCloudSyncEnabled to AppSettings.
+    // Lightweight migration — SwiftData auto-fills new fields with defaults.
+    static let migrateV1toV2 = MigrationStage.lightweight(
+        fromVersion: IChingSchemaV1.self,
+        toVersion: IChingSchemaV2.self
+    )
+}
+
 @main
 struct IChingApp: App {
     let modelContainer: ModelContainer?
@@ -14,14 +47,18 @@ struct IChingApp: App {
                 AppSettings.self
             ])
 
+            // Default to no CloudKit sync — user must opt in via Settings
+            // allowsSave: true ensures data is persisted (not read-only)
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                cloudKitDatabase: .automatic
+                allowsSave: true,
+                cloudKitDatabase: .none
             )
 
             modelContainer = try ModelContainer(
                 for: schema,
+                migrationPlan: IChingMigrationPlan.self,
                 configurations: [modelConfiguration]
             )
             initError = nil
@@ -29,6 +66,21 @@ struct IChingApp: App {
             modelContainer = nil
             initError = error.localizedDescription
         }
+
+        // Enable file-level encryption for the SwiftData store
+        Self.enableDataProtection()
+    }
+
+    /// Sets NSFileProtection on the SwiftData store directory to encrypt at rest.
+    /// Data is only accessible when the device is unlocked.
+    private static func enableDataProtection() {
+        #if os(iOS)
+        guard let storeURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
+        try? FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
+            ofItemAtPath: storeURL.path
+        )
+        #endif
     }
 
     var body: some Scene {

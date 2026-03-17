@@ -6,9 +6,9 @@ extension Color {
     
     /// Semantic colors for the app
     static let yangColor = Color.primary
-    static let yinColor = Color.primary
-    static let changingYang = Color.accentColor
-    static let changingYin = Color.accentColor
+    static let yinColor = Color.secondary
+    static let changingYang = Color.orange
+    static let changingYin = Color.purple
     
     /// Background variants
     #if os(macOS)
