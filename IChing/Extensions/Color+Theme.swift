@@ -22,7 +22,7 @@ extension Color {
     #endif
 }
 
-extension ShapeStyle where Self == Color {
+extension ShapeStyle where Self == LinearGradient {
     /// Gradient for coin surfaces
     static var coinGradient: LinearGradient {
         LinearGradient(
@@ -38,15 +38,13 @@ extension ShapeStyle where Self == Color {
     
     /// Gradient for backgrounds
     static var zenGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                #if os(macOS)
-                Color(nsColor: .windowBackgroundColor),
-                #else
-                Color(.systemBackground),
-                #endif
-                Color.accentColor.opacity(0.05)
-            ],
+        #if os(macOS)
+        let bgColor = Color(nsColor: .windowBackgroundColor)
+        #else
+        let bgColor = Color(.systemBackground)
+        #endif
+        return LinearGradient(
+            colors: [bgColor, Color.accentColor.opacity(0.05)],
             startPoint: .top,
             endPoint: .bottom
         )

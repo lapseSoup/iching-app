@@ -30,7 +30,9 @@ struct ManualEntryView: View {
             }
             .padding()
             .navigationTitle("Manual Entry")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {

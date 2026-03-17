@@ -25,7 +25,9 @@ struct ReadingDetailView: View {
             .padding()
         }
         .navigationTitle("Reading")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

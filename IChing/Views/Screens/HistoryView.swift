@@ -61,11 +61,19 @@ struct HistoryView: View {
             .navigationTitle("History")
             .searchable(text: $searchText, prompt: "Search readings")
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingSettings = true } label: {
                         Image(systemName: "gearshape")
                     }
                 }
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                #endif
             }
         }
     }
@@ -93,7 +101,9 @@ struct HistoryView: View {
                 }
             }
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #endif
         .navigationDestination(for: Reading.self) { reading in
             ReadingDetailView(reading: reading)
         }

@@ -65,13 +65,12 @@ final class Reading {
         self.lineValue6 = lines.indices.contains(5) ? lines[5].rawValue : 7
 
         // Calculate hexagram IDs
-        let lineVals = self.lineValues
-        if let result = Hexagram.from(lineValues: lineVals) {
+        if let result = Hexagram.from(lineValues: lines) {
             self.primaryHexagramId = result.primary.id
             self.relatingHexagramId = result.relating?.id
         } else {
             #if DEBUG
-            print("Warning: Could not resolve hexagram from lines \(lineVals.map(\.rawValue)), defaulting to hexagram 1")
+            print("Warning: Could not resolve hexagram from lines \(lines.map(\.rawValue)), defaulting to hexagram 1")
             #endif
             self.primaryHexagramId = 1
             self.relatingHexagramId = nil

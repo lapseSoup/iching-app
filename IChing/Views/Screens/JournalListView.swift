@@ -33,11 +33,19 @@ struct JournalListView: View {
             .navigationTitle("Journal")
             .searchable(text: $searchText, prompt: "Search journal")
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingSettings = true } label: {
                         Image(systemName: "gearshape")
                     }
                 }
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                #endif
             }
         }
     }
@@ -59,7 +67,9 @@ struct JournalListView: View {
             }
             .onDelete(perform: deleteEntries)
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #endif
         .navigationDestination(for: JournalEntry.self) { entry in
             JournalEntryDetailView(entry: entry)
         }

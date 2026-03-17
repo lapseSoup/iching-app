@@ -103,7 +103,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
@@ -155,7 +157,9 @@ struct AboutIChingView: View {
             .padding()
         }
         .navigationTitle("About")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 
@@ -180,7 +184,9 @@ struct AcknowledgmentsView: View {
             .padding()
         }
         .navigationTitle("Acknowledgments")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 

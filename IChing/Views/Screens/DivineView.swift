@@ -8,8 +8,9 @@ struct DivineView: View {
     @State private var showingMethodPicker = false
     @State private var navigateToReading: Reading?
 
-    init(viewModel: DivineViewModel = DivineViewModel(), showingSettings: Binding<Bool> = .constant(false)) {
-        _viewModel = State(initialValue: viewModel)
+    @MainActor
+    init(viewModel: DivineViewModel? = nil, showingSettings: Binding<Bool> = .constant(false)) {
+        _viewModel = State(initialValue: viewModel ?? DivineViewModel())
         _showingSettings = showingSettings
     }
     
@@ -38,13 +39,23 @@ struct DivineView: View {
                 }
             }
             .navigationTitle("Divine")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingSettings = true } label: {
                         Image(systemName: "gearshape")
                     }
                 }
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                #endif
             }
             .navigationDestination(item: $navigateToReading) { reading in
                 ReadingDetailView(reading: reading)

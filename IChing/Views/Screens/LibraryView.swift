@@ -42,11 +42,19 @@ struct LibraryView: View {
             .navigationTitle("Library")
             .searchable(text: $searchText, prompt: "Search hexagrams")
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingSettings = true } label: {
                         Image(systemName: "gearshape")
                     }
                 }
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                #endif
             }
             .navigationDestination(for: Hexagram.self) { hexagram in
                 HexagramDetailView(hexagram: hexagram)

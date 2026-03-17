@@ -15,11 +15,7 @@ enum AppColorScheme: String, Codable, CaseIterable {
 /// User preferences and settings
 @Model
 final class AppSettings {
-    #if swift(>=6.0)
     @Attribute(.unique) var id: UUID
-    #else
-    var id: UUID
-    #endif
 
     // Daily hexagram settings
     var dailyHexagramEnabled: Bool

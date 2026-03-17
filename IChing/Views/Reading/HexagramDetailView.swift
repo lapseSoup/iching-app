@@ -16,7 +16,9 @@ struct HexagramDetailView: View {
             .padding()
         }
         .navigationTitle("Hexagram \(hexagram.id)")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
     
     // MARK: - Header

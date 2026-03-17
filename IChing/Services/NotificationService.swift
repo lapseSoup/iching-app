@@ -39,7 +39,7 @@ final class NotificationService {
     /// Each day gets its own notification with the correct hexagram for that date.
     /// Call this on app launch and whenever the notification time changes.
     func scheduleDailyHexagram(at time: Date) async {
-        guard isAuthorized else {
+        if !isAuthorized {
             let granted = await requestAuthorization()
             guard granted else { return }
         }

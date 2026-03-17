@@ -46,7 +46,9 @@ struct JournalEditorView: View {
                 }
             }
             .navigationTitle(isEditing ? "Edit Reflection" : "Add Reflection")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -173,7 +175,9 @@ struct JournalEntryDetailView: View {
             .padding()
         }
         .navigationTitle("Reflection")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
