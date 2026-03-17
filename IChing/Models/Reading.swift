@@ -67,7 +67,7 @@ final class Reading {
     /// Reconstructs line values from stored integers
     var lineValues: [LineValue] {
         [lineValue1, lineValue2, lineValue3, lineValue4, lineValue5, lineValue6]
-            .compactMap { LineValue(rawValue: $0) }
+            .map { LineValue(rawValue: $0) ?? .youngYang }
     }
     
     /// Lines as Line objects
@@ -100,18 +100,12 @@ final class Reading {
     
     /// Formatted date for display
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .short
-        return formatter.string(from: createdAt)
+        DateFormatters.longDate.string(from: createdAt)
     }
-    
+
     /// Short date for lists
     var shortDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: createdAt)
+        DateFormatters.shortDate.string(from: createdAt)
     }
 }
 

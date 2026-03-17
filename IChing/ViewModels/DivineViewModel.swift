@@ -1,7 +1,7 @@
 import SwiftUI
 import Observation
 
-@Observable
+@MainActor @Observable
 final class DivineViewModel {
     enum State {
         case idle
@@ -56,35 +56,28 @@ final class DivineViewModel {
         
         Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
             flips += 1
-            
+
             // Random intermediate states
             self.currentCoins = [
                 Bool.random(),
                 Bool.random(),
                 Bool.random()
             ]
-            
-            #if os(iOS)
-            // Haptic feedback
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
-            #endif
-            
+
+            HapticService.impact(.light)
+
             if flips >= flipCount {
                 timer.invalidate()
-                
+
                 // Final result
                 self.currentCoins = [
                     Bool.random(),
                     Bool.random(),
                     Bool.random()
                 ]
-                
-                #if os(iOS)
-                let finalGenerator = UINotificationFeedbackGenerator()
-                finalGenerator.notificationOccurred(.success)
-                #endif
-                
+
+                HapticService.notification(.success)
+
                 self.isFlipping = false
                 self.canProceed = true
             }

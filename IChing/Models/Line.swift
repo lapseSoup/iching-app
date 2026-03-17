@@ -63,10 +63,10 @@ enum LineValue: Int, Codable, CaseIterable {
     /// Create from coin flip result (number of heads: 0-3)
     static func from(heads: Int) -> LineValue {
         switch heads {
-        case 0: return .oldYin    // 0 heads = 6
-        case 1: return .youngYin  // 1 head = 7
-        case 2: return .youngYang // 2 heads = 8
-        case 3: return .oldYang   // 3 heads = 9
+        case 0: return .oldYin    // 0 heads (2+2+2) = 6
+        case 1: return .youngYang // 1 head  (3+2+2) = 7
+        case 2: return .youngYin  // 2 heads (3+3+2) = 8
+        case 3: return .oldYang   // 3 heads (3+3+3) = 9
         default: return .youngYang
         }
     }

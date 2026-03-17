@@ -11,12 +11,14 @@ struct CoinFlipView: View {
             HStack(spacing: 20) {
                 ForEach(0..<3, id: \.self) { index in
                     CoinView(
-                        isHeads: coins[index],
+                        isHeads: index < coins.count ? coins[index] : false,
                         isFlipping: isFlipping,
                         delay: Double(index) * 0.05
                     )
+                    .accessibilityLabel("Coin \(index + 1): \(index < coins.count && coins[index] ? "heads" : "tails")")
                 }
             }
+            .accessibilityElement(children: .combine)
             
             if !isFlipping {
                 let heads = coins.filter { $0 }.count
@@ -49,6 +51,7 @@ struct CoinFlipView: View {
                 .foregroundColor(.white)
             }
             .disabled(isFlipping)
+            .accessibilityHint(isFlipping ? "Coins are being flipped" : "Double tap to flip three coins")
         }
     }
     

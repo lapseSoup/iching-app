@@ -14,8 +14,13 @@ final class HexagramLibrary {
     
     /// Get hexagram by King Wen sequence number (1-64)
     func hexagram(number: Int) -> Hexagram? {
-        guard number >= 1 && number <= 64 else { return nil }
-        return hexagrams.first { $0.id == number }
+        guard number >= 1 && number <= 64 && number <= hexagrams.count else { return nil }
+        let hex = hexagrams[number - 1]
+        guard hex.id == number else {
+            // Fallback to linear search if array is not sorted by id
+            return hexagrams.first { $0.id == number }
+        }
+        return hex
     }
     
     /// Get hexagram by matching six lines (bottom to top)

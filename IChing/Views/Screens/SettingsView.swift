@@ -4,19 +4,14 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    
+
     @Query private var settingsArray: [AppSettings]
-    
+    @State private var hasEnsuredSettings = false
+
     private var settings: AppSettings {
-        if let existing = settingsArray.first {
-            return existing
-        } else {
-            let newSettings = AppSettings()
-            modelContext.insert(newSettings)
-            return newSettings
-        }
+        settingsArray.first ?? AppSettings()
     }
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -88,6 +83,12 @@ struct SettingsView: View {
                     Button("Done") {
                         dismiss()
                     }
+                }
+            }
+            .onAppear {
+                if !hasEnsuredSettings && settingsArray.isEmpty {
+                    modelContext.insert(AppSettings())
+                    hasEnsuredSettings = true
                 }
             }
         }

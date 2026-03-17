@@ -11,8 +11,13 @@ extension Color {
     static let changingYin = Color.accentColor
     
     /// Background variants
+    #if os(macOS)
+    static let cardBackground = Color(nsColor: .controlBackgroundColor)
+    static let groupedBackground = Color(nsColor: .windowBackgroundColor)
+    #else
     static let cardBackground = Color(.secondarySystemBackground)
     static let groupedBackground = Color(.systemGroupedBackground)
+    #endif
 }
 
 extension ShapeStyle where Self == Color {
@@ -33,7 +38,11 @@ extension ShapeStyle where Self == Color {
     static var zenGradient: LinearGradient {
         LinearGradient(
             colors: [
+                #if os(macOS)
+                Color(nsColor: .windowBackgroundColor),
+                #else
                 Color(.systemBackground),
+                #endif
                 Color.accentColor.opacity(0.05)
             ],
             startPoint: .top,

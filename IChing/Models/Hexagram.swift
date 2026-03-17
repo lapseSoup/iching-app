@@ -27,10 +27,7 @@ struct Hexagram: Identifiable, Codable, Equatable {
     
     /// Unicode hexagram symbol
     var symbol: String {
-        // Unicode hexagram symbols start at U+4DC0
-        let baseCodePoint = 0x4DC0
-        // King Wen sequence to binary conversion - we use stored character instead
-        return character
+        character
     }
     
     /// Creates the related/transformed hexagram by flipping changing lines

@@ -42,7 +42,9 @@ final class NotificationService {
         cancelDailyNotifications()
         
         // Get a random hexagram
-        let hexagram = HexagramLibrary.shared.hexagram(number: Int.random(in: 1...64))!
+        guard let hexagram = HexagramLibrary.shared.hexagram(number: Int.random(in: 1...64)) else {
+            return
+        }
         
         // Create notification content
         let content = UNMutableNotificationContent()

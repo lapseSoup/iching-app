@@ -23,17 +23,14 @@ final class JournalEntry {
     }
     
     /// Updates the entry content and timestamp
-    func update(content: String, mood: Mood? = nil) {
+    func update(content: String, mood: Mood?) {
         self.content = content
         self.mood = mood
         self.updatedAt = Date()
     }
     
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: createdAt)
+        DateFormatters.mediumDateTime.string(from: createdAt)
     }
     
     var isEdited: Bool {

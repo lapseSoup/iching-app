@@ -29,9 +29,7 @@ struct HistoryView: View {
             } else if calendar.isDate(reading.createdAt, equalTo: Date(), toGranularity: .month) {
                 return "This Month"
             } else {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMMM yyyy"
-                return formatter.string(from: reading.createdAt)
+                return DateFormatters.monthYear.string(from: reading.createdAt)
             }
         }
         
@@ -42,7 +40,7 @@ struct HistoryView: View {
             if aIndex != Int.max || bIndex != Int.max {
                 return aIndex < bIndex
             }
-            return a.value.first?.createdAt ?? Date() > b.value.first?.createdAt ?? Date()
+            return (a.value.first?.createdAt ?? Date()) > (b.value.first?.createdAt ?? Date())
         }
     }
     

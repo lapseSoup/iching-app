@@ -11,14 +11,7 @@ struct DivineView: View {
         NavigationStack {
             ZStack {
                 // Background gradient
-                LinearGradient(
-                    colors: [
-                        Color(.systemBackground),
-                        Color.accentColor.opacity(0.05)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+                LinearGradient.zenGradient
                 .ignoresSafeArea()
                 
                 ScrollView {
@@ -51,7 +44,7 @@ struct DivineView: View {
     private var headerSection: some View {
         VStack(spacing: 8) {
             Text("易經")
-                .font(.system(size: 48, weight: .thin))
+                .font(.largeTitle)
             
             Text("The Book of Changes")
                 .font(.subheadline)
@@ -75,7 +68,7 @@ struct DivineView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.secondarySystemBackground))
+                        .fill(Color.cardBackground)
                 )
         }
     }
@@ -109,9 +102,9 @@ struct DivineView: View {
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(viewModel.selectedMethod == method ? 
-                          Color.accentColor.opacity(0.15) : 
-                          Color(.secondarySystemBackground))
+                    .fill(viewModel.selectedMethod == method ?
+                          Color.accentColor.opacity(0.15) :
+                          Color.cardBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)

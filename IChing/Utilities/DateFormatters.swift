@@ -8,6 +8,13 @@ enum DateFormatters {
         return formatter
     }()
     
+    static let mediumDateTime: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     static let longDate: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
@@ -24,7 +31,7 @@ enum DateFormatters {
     
     static let monthYear: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.setLocalizedDateFormatFromTemplate("MMMM yyyy")
         return formatter
     }()
     
