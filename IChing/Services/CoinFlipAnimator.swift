@@ -25,9 +25,6 @@ final class CoinFlipAnimator {
 
             flips += 1
 
-            let coins = [Bool.random(), Bool.random(), Bool.random()]
-            HapticService.impact(.light)
-
             if flips >= self.flipCount {
                 timer.invalidate()
                 self.timer = nil
@@ -36,6 +33,8 @@ final class CoinFlipAnimator {
                 HapticService.notification(.success)
                 self.onComplete?(finalCoins)
             } else {
+                let coins = [Bool.random(), Bool.random(), Bool.random()]
+                HapticService.impact(.light)
                 self.onIntermediateFlip?(coins)
             }
         }

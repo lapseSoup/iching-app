@@ -38,8 +38,10 @@ final class AppSettings {
     // Privacy
     var iCloudSyncEnabled: Bool
 
+    static let singletonID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+
     init() {
-        self.id = UUID()
+        self.id = Self.singletonID
         self.dailyHexagramEnabled = false
 
         // Default notification time: 8:00 AM

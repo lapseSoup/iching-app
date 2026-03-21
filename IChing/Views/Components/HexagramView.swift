@@ -114,6 +114,18 @@ struct HexagramBuildingView: View {
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: lines.count)
         .padding(.horizontal, 40)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(buildingAccessibilityLabel)
+    }
+
+    private var buildingAccessibilityLabel: String {
+        if lines.isEmpty {
+            return "Hexagram building view, no lines drawn yet"
+        }
+        let lineDescriptions = lines.enumerated().map { index, value in
+            "Line \(index + 1): \(value.isYang ? "yang" : "yin")\(value.isChanging ? " changing" : "")"
+        }.joined(separator: ", ")
+        return "\(lines.count) of 6 lines drawn. \(lineDescriptions)"
     }
 }
 

@@ -32,21 +32,7 @@ struct JournalListView: View {
             }
             .navigationTitle("Journal")
             .searchable(text: $searchText, prompt: "Search journal")
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #else
-                ToolbarItem(placement: .automatic) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #endif
-            }
+            .settingsToolbarButton(showingSettings: $showingSettings)
         }
     }
     

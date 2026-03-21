@@ -4,8 +4,9 @@ import SwiftUI
 struct CoinFlipView: View {
     let coins: [Bool] // true = heads
     let isFlipping: Bool
+    let hasFlipped: Bool
     let onFlip: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 24) {
             HStack(spacing: 20) {
@@ -19,14 +20,14 @@ struct CoinFlipView: View {
                 }
             }
             .accessibilityElement(children: .combine)
-            
-            if !isFlipping {
+
+            if hasFlipped && !isFlipping {
                 let heads = coins.filter { $0 }.count
                 VStack(spacing: 8) {
                     Text("\(heads) heads, \(3 - heads) tails")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    
+
                     let lineValue = LineValue.from(heads: heads)
                     Text(lineDescription(for: lineValue))
                         .font(.caption)
@@ -77,32 +78,17 @@ struct CoinView: View {
         ZStack {
             // Coin face
             Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.85, green: 0.75, blue: 0.55),
-                            Color(red: 0.75, green: 0.65, blue: 0.45),
-                            Color(red: 0.85, green: 0.75, blue: 0.55)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(.coinGradient)
                 .overlay(
                     Circle()
-                        .stroke(
-                            Color(red: 0.65, green: 0.55, blue: 0.35),
-                            lineWidth: 2
-                        )
+                        .stroke(Color.coinBorder, lineWidth: 2)
                 )
                 .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 2)
-            
+
             // Symbol
             Text(isHeads ? "龍" : "鳳")
                 .font(.system(size: 24, weight: .bold, design: .serif))
-                .foregroundStyle(
-                    Color(red: 0.55, green: 0.45, blue: 0.25)
-                )
+                .foregroundStyle(Color.coinSymbol)
                 .scaleEffect(x: rotation.truncatingRemainder(dividingBy: 360) > 90 && 
                               rotation.truncatingRemainder(dividingBy: 360) < 270 ? -1 : 1)
         }
@@ -114,6 +100,8 @@ struct CoinView: View {
         )
         .onChange(of: isFlipping) { _, flipping in
             if flipping {
+                // Normalize rotation to prevent unbounded accumulation
+                rotation = rotation.truncatingRemainder(dividingBy: 360)
                 withAnimation(
                     .easeInOut(duration: 0.1)
                         .repeatCount(8, autoreverses: false)
@@ -138,6 +126,7 @@ struct CoinView: View {
         CoinFlipView(
             coins: [true, false, true],
             isFlipping: false,
+            hasFlipped: true,
             onFlip: {}
         )
     }

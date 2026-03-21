@@ -1,22 +1,6 @@
 import SwiftUI
 
 extension View {
-    /// Apply a card style background
-    func cardStyle() -> some View {
-        self
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.cardBackground)
-            )
-    }
-    
-    /// Apply a subtle shadow
-    func softShadow() -> some View {
-        self
-            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
-    }
-    
     /// Conditionally apply a modifier
     @ViewBuilder
     func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
@@ -26,23 +10,35 @@ extension View {
             self
         }
     }
-    
-}
 
-// MARK: - Animation Extensions
+    /// Adds a settings gear button to the toolbar (Q-25)
+    func settingsToolbarButton(showingSettings: Binding<Bool>) -> some View {
+        self.toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showingSettings.wrappedValue = true } label: {
+                    Image(systemName: "gearshape")
+                }
+            }
+            #else
+            ToolbarItem(placement: .automatic) {
+                Button { showingSettings.wrappedValue = true } label: {
+                    Image(systemName: "gearshape")
+                }
+            }
+            #endif
+        }
+    }
 
-extension Animation {
-    static let smoothSpring = Animation.spring(response: 0.4, dampingFraction: 0.75)
-    static let quickSpring = Animation.spring(response: 0.3, dampingFraction: 0.7)
-    static let gentleSpring = Animation.spring(response: 0.5, dampingFraction: 0.8)
-}
-
-// MARK: - Accessibility
-
-extension View {
-    func accessibleCard(label: String) -> some View {
-        self
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(label)
+    /// Presents an error alert with an OK button (Q-34)
+    func errorAlert(_ errorMessage: Binding<String?>, title: String = "Error") -> some View {
+        self.alert(title, isPresented: Binding(
+            get: { errorMessage.wrappedValue != nil },
+            set: { if !$0 { errorMessage.wrappedValue = nil } }
+        )) {
+            Button("OK") { errorMessage.wrappedValue = nil }
+        } message: {
+            Text(errorMessage.wrappedValue ?? "")
+        }
     }
 }

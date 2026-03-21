@@ -45,6 +45,12 @@ struct ContentView: View {
         }
         .tint(Color.accentColor)
         .preferredColorScheme(preferredColorScheme)
+        .onAppear { ensureSettingsExist() }
+        .onChange(of: NavigationCoordinator.shared.pendingHexagramId) { _, newValue in
+            if newValue != nil {
+                selectedTab = .library
+            }
+        }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
@@ -60,10 +66,17 @@ struct ContentView: View {
             tabContent(for: selectedTab)
         }
         .preferredColorScheme(preferredColorScheme)
+        .onAppear { ensureSettingsExist() }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
         #endif
+    }
+
+    private func ensureSettingsExist() {
+        if settingsArray.isEmpty {
+            modelContext.insert(AppSettings())
+        }
     }
     
     @ViewBuilder

@@ -19,6 +19,7 @@ final class DivineViewModel {
     var isFlipping: Bool = false
     var completedLines: [LineValue] = []
     var canProceed: Bool = false
+    var hasFlipped: Bool = false
 
     private let animator = CoinFlipAnimator()
 
@@ -31,6 +32,7 @@ final class DivineViewModel {
             self.currentCoins = coins
             self.isFlipping = false
             self.canProceed = true
+            self.hasFlipped = true
         }
     }
 
@@ -55,6 +57,7 @@ final class DivineViewModel {
         completedLines = []
         currentCoins = [false, false, false]
         canProceed = false
+        hasFlipped = false
     }
 
     func flipCoins() {
@@ -74,6 +77,7 @@ final class DivineViewModel {
             currentLine += 1
             currentCoins = [false, false, false]
             canProceed = false
+            hasFlipped = false
         }
     }
 
@@ -91,5 +95,6 @@ final class DivineViewModel {
         currentCoins = [false, false, false]
         canProceed = false
         isFlipping = false
+        hasFlipped = false
     }
 }

@@ -10,6 +10,7 @@ struct JournalEditorView: View {
     
     @State private var content: String = ""
     @State private var selectedMood: Mood?
+    @State private var saveError: String?
     
     private var isEditing: Bool { existingEntry != nil }
     
@@ -26,11 +27,18 @@ struct JournalEditorView: View {
                 Section {
                     TextEditor(text: $content)
                         .frame(minHeight: 200)
+                        .onChange(of: content) { _, newValue in
+                            if newValue.count > 10_000 {
+                                content = String(newValue.prefix(10_000))
+                            }
+                        }
                 } header: {
                     Text("Your Reflection")
                 } footer: {
                     if let hexagram = reading.primaryHexagram {
-                        Text("Reflecting on \(hexagram.englishName)")
+                        Text("Reflecting on \(hexagram.englishName) • \(content.count)/10,000")
+                    } else {
+                        Text("\(content.count)/10,000")
                     }
                 }
                 
@@ -63,6 +71,7 @@ struct JournalEditorView: View {
                     .disabled(content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .errorAlert($saveError, title: "Save Error")
         }
     }
     
@@ -103,8 +112,13 @@ struct JournalEditorView: View {
             let entry = JournalEntry(content: content, mood: selectedMood, reading: reading)
             modelContext.insert(entry)
         }
-        
-        dismiss()
+
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            saveError = IChingError.saveFailed(underlying: error).localizedDescription
+        }
     }
 }
 
@@ -114,6 +128,7 @@ struct JournalEntryDetailView: View {
     
     @State private var showingEditor = false
     @State private var showingDeleteAlert = false
+    @State private var deleteError: String?
     
     var body: some View {
         ScrollView {
@@ -202,10 +217,17 @@ struct JournalEntryDetailView: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 modelContext.delete(entry)
+                do {
+                    try modelContext.save()
+                } catch {
+                    modelContext.rollback()
+                    deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
+                }
             }
         } message: {
             Text("This cannot be undone.")
         }
+        .errorAlert($deleteError, title: "Delete Error")
         .navigationDestination(for: Reading.self) { reading in
             ReadingDetailView(reading: reading)
         }

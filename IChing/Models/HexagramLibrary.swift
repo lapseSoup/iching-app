@@ -8,16 +8,77 @@ protocol HexagramRepository {
     var hexagrams: [Hexagram] { get }
 }
 
+// MARK: - JSON Decoding Types
+
+/// Codable representation of a hexagram for JSON loading
+private struct CodableHexagram: Codable {
+    let id: Int
+    let chineseName: String
+    let pinyin: String
+    let englishName: String
+    let character: String
+    let upperTrigram: String
+    let lowerTrigram: String
+    let judgment: String
+    let image: String
+    let commentary: String
+    let lineTexts: [CodableLineMeaning]
+
+    func toHexagram() -> Hexagram? {
+        guard let upper = Trigram.from(name: upperTrigram),
+              let lower = Trigram.from(name: lowerTrigram) else { return nil }
+        return Hexagram(
+            id: id,
+            chineseName: chineseName,
+            pinyin: pinyin,
+            englishName: englishName,
+            character: character,
+            upperTrigram: upper,
+            lowerTrigram: lower,
+            judgment: judgment,
+            image: image,
+            commentary: commentary,
+            lineTexts: lineTexts.map { $0.toLineMeaning() }
+        )
+    }
+}
+
+private struct CodableLineMeaning: Codable {
+    let position: Int
+    let text: String
+    let interpretation: String
+
+    func toLineMeaning() -> LineMeaning {
+        LineMeaning(position: position, text: text, interpretation: interpretation)
+    }
+}
+
 /// The complete library of all 64 I Ching hexagrams
 final class HexagramLibrary: HexagramRepository {
     static let shared: HexagramRepository = HexagramLibrary()
-    
+
     private(set) var hexagrams: [Hexagram] = []
     private var lineToHexagramMap: [String: Int] = [:]
-    
+
     private init() {
-        loadHexagrams()
+        if !loadFromJSON() {
+            loadHexagrams() // Fallback to hardcoded data
+        }
         buildLineMap()
+    }
+
+    /// Loads hexagram data from the bundled hexagrams.json file.
+    /// Returns true if loading succeeded, false to fall back to hardcoded data.
+    private func loadFromJSON() -> Bool {
+        guard let url = Bundle.main.url(forResource: "hexagrams", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let codable = try? JSONDecoder().decode([CodableHexagram].self, from: data) else {
+            return false
+        }
+        let loaded = codable.compactMap { $0.toHexagram() }
+        guard loaded.count == 64 else { return false }
+        hexagrams = loaded.sorted { $0.id < $1.id }
+        return true
     }
     
     /// Get hexagram by King Wen sequence number (1-64)

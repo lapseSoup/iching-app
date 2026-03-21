@@ -6,10 +6,15 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query private var settingsArray: [AppSettings]
-    @State private var hasEnsuredSettings = false
 
     private var settings: AppSettings {
-        settingsArray.first ?? AppSettings()
+        if let existing = settingsArray.first {
+            return existing
+        }
+        // Insert singleton if missing (race with ContentView.onAppear)
+        let newSettings = AppSettings()
+        modelContext.insert(newSettings)
+        return newSettings
     }
 
     var body: some View {
@@ -89,7 +94,7 @@ struct SettingsView: View {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("1.0.0")
+                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")
                             .foregroundStyle(.secondary)
                     }
                     
@@ -114,10 +119,6 @@ struct SettingsView: View {
                 }
             }
             .onAppear {
-                if !hasEnsuredSettings && settingsArray.isEmpty {
-                    modelContext.insert(AppSettings())
-                    hasEnsuredSettings = true
-                }
                 HapticService.isEnabled = settings.hapticFeedbackEnabled
             }
         }

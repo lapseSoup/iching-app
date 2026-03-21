@@ -39,7 +39,10 @@
 		F1000030 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000030; };
 		F1000031 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000031; };
 		F1000032 /* HexagramBasicData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000032; };
+		F1000040 /* IChingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000040; };
+		F1000041 /* NavigationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000041; };
 		F1000050 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F2000050; };
+		F1000099 /* hexagrams.json in Resources */ = {isa = PBXBuildFile; fileRef = F2000099; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,7 +78,10 @@
 		F2000030 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		F2000031 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F2000032 /* HexagramBasicData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HexagramBasicData.swift; path = Shared/HexagramBasicData.swift; sourceTree = SOURCE_ROOT; };
+		F2000040 /* IChingError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IChingError.swift; sourceTree = "<group>"; };
+		F2000041 /* NavigationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationCoordinator.swift; sourceTree = "<group>"; };
 		F2000050 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F2000099 /* hexagrams.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/hexagrams.json; sourceTree = "<group>"; };
 		F2000051 /* IChing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IChing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2000052 /* IChing.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = IChing.entitlements; sourceTree = "<group>"; };
 		F2000053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -102,6 +108,7 @@
 				F3000007 /* Extensions */,
 				F3000008 /* Utilities */,
 				F2000050 /* Assets.xcassets */,
+				F2000099 /* hexagrams.json */,
 				F2000052 /* IChing.entitlements */,
 				F2000053 /* Info.plist */,
 			);
@@ -127,6 +134,7 @@
 				F2000009 /* HexagramData3.swift */,
 				F2000010 /* HexagramData4.swift */,
 				F2000011 /* HexagramLibrary.swift */,
+				F2000040 /* IChingError.swift */,
 				F2000012 /* JournalEntry.swift */,
 				F2000013 /* Line.swift */,
 				F2000014 /* Reading.swift */,
@@ -158,6 +166,7 @@
 			children = (
 				F2000016 /* CoinFlipAnimator.swift */,
 				F2000017 /* HapticService.swift */,
+				F2000041 /* NavigationCoordinator.swift */,
 				F2000018 /* NotificationService.swift */,
 			);
 			path = Services;
@@ -288,6 +297,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F1000050 /* Assets.xcassets in Resources */,
+				F1000099 /* hexagrams.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,6 +340,8 @@
 				F1000030 /* LibraryView.swift in Sources */,
 				F1000031 /* SettingsView.swift in Sources */,
 				F1000032 /* HexagramBasicData.swift in Sources */,
+				F1000040 /* IChingError.swift in Sources */,
+				F1000041 /* NavigationCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

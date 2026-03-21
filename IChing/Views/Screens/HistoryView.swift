@@ -7,6 +7,7 @@ struct HistoryView: View {
     @Query(sort: \Reading.createdAt, order: .reverse) private var readings: [Reading]
 
     @State private var searchText = ""
+    @State private var deleteError: String?
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
         _showingSettings = showingSettings
@@ -60,21 +61,8 @@ struct HistoryView: View {
             }
             .navigationTitle("History")
             .searchable(text: $searchText, prompt: "Search readings")
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #else
-                ToolbarItem(placement: .automatic) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #endif
-            }
+            .errorAlert($deleteError, title: "Delete Error")
+            .settingsToolbarButton(showingSettings: $showingSettings)
         }
     }
     
@@ -112,6 +100,11 @@ struct HistoryView: View {
     private func deleteReadings(at offsets: IndexSet, in readings: [Reading]) {
         for index in offsets {
             modelContext.delete(readings[index])
+        }
+        do {
+            try modelContext.save()
+        } catch {
+            deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
         }
     }
 }

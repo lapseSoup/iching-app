@@ -139,4 +139,17 @@ enum Trigram: Int, Codable, CaseIterable, Identifiable {
         guard lines.count == 3 else { return nil }
         return lineMap[lines]
     }
+
+    /// Create trigram from string name (for JSON decoding)
+    static func from(name: String) -> Trigram? {
+        nameMap[name]
+    }
+
+    private static let nameMap: [String: Trigram] = {
+        var map = [String: Trigram]()
+        for trigram in Trigram.allCases {
+            map[String(describing: trigram)] = trigram
+        }
+        return map
+    }()
 }

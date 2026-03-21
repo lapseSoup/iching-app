@@ -60,8 +60,8 @@ final class NotificationService {
 
             let content = UNMutableNotificationContent()
             content.title = "Daily Hexagram"
-            content.subtitle = "\(hexagram.id). \(hexagram.englishName)"
-            content.body = "\(hexagram.chineseName) (\(hexagram.pinyin)) - Tap to explore today's wisdom."
+            content.subtitle = "Your daily wisdom is ready"
+            content.body = "Tap to reveal today's hexagram."
             content.sound = .default
 
             var dateComponents = calendar.dateComponents([.year, .month, .day], from: targetDate)

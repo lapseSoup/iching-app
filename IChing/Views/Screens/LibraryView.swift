@@ -3,7 +3,7 @@ import SwiftUI
 struct LibraryView: View {
     @Binding var showingSettings: Bool
     @State private var searchText = ""
-    @State private var selectedHexagram: Hexagram?
+    @State private var deepLinkHexagram: Hexagram?
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
         _showingSettings = showingSettings
@@ -41,23 +41,25 @@ struct LibraryView: View {
             }
             .navigationTitle("Library")
             .searchable(text: $searchText, prompt: "Search hexagrams")
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #else
-                ToolbarItem(placement: .automatic) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #endif
-            }
+            .settingsToolbarButton(showingSettings: $showingSettings)
             .navigationDestination(for: Hexagram.self) { hexagram in
                 HexagramDetailView(hexagram: hexagram)
+            }
+            .navigationDestination(item: $deepLinkHexagram) { hexagram in
+                HexagramDetailView(hexagram: hexagram)
+            }
+            .onAppear {
+                if let id = NavigationCoordinator.shared.consumePendingHexagram(),
+                   let hexagram = HexagramLibrary.shared.hexagram(number: id) {
+                    deepLinkHexagram = hexagram
+                }
+            }
+            .onChange(of: NavigationCoordinator.shared.pendingHexagramId) { _, newValue in
+                if let id = newValue,
+                   let hexagram = HexagramLibrary.shared.hexagram(number: id) {
+                    _ = NavigationCoordinator.shared.consumePendingHexagram()
+                    deepLinkHexagram = hexagram
+                }
             }
         }
     }

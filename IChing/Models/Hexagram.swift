@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents one of the 64 hexagrams of the I Ching
-struct Hexagram: Identifiable, Codable, Hashable {
+struct Hexagram: Identifiable, Hashable {
     let id: Int // 1-64, King Wen sequence
     let chineseName: String
     let pinyin: String
@@ -31,17 +31,16 @@ struct Hexagram: Identifiable, Codable, Hashable {
     }
     
     /// Creates the related/transformed hexagram by flipping changing lines
-    func transformed(withChangingLines changingPositions: Set<Int>) -> Hexagram? {
+    func transformed(withChangingLines changingPositions: Set<Int>, using repository: HexagramRepository = HexagramLibrary.shared) -> Hexagram? {
         guard !changingPositions.isEmpty else { return nil }
-        
+
         var newLines = lines
         for position in changingPositions {
             guard position >= 1 && position <= 6 else { continue }
             newLines[position - 1].toggle()
         }
-        
-        // Find the hexagram with matching lines
-        return HexagramLibrary.shared.hexagram(forLines: newLines)
+
+        return repository.hexagram(forLines: newLines)
     }
     
     static func == (lhs: Hexagram, rhs: Hexagram) -> Bool {
@@ -54,7 +53,7 @@ struct Hexagram: Identifiable, Codable, Hashable {
 }
 
 /// Meaning/interpretation for a single line
-struct LineMeaning: Codable, Identifiable {
+struct LineMeaning: Identifiable {
     var id: Int { position }
     let position: Int // 1-6
     let text: String
@@ -64,18 +63,18 @@ struct LineMeaning: Codable, Identifiable {
 /// Extension for convenience initializers
 extension Hexagram {
     /// Creates hexagram from six line values
-    static func from(lineValues: [LineValue]) -> (primary: Hexagram, relating: Hexagram?)? {
+    static func from(lineValues: [LineValue], using repository: HexagramRepository = HexagramLibrary.shared) -> (primary: Hexagram, relating: Hexagram?)? {
         guard lineValues.count == 6 else { return nil }
-        
+
         let lines = lineValues.map { $0.isYang }
-        guard let primary = HexagramLibrary.shared.hexagram(forLines: lines) else { return nil }
-        
+        guard let primary = repository.hexagram(forLines: lines) else { return nil }
+
         let changingPositions = Set(lineValues.enumerated()
             .filter { $0.element.isChanging }
             .map { $0.offset + 1 })
-        
-        let relating = primary.transformed(withChangingLines: changingPositions)
-        
+
+        let relating = primary.transformed(withChangingLines: changingPositions, using: repository)
+
         return (primary, relating)
     }
 }

@@ -16,7 +16,9 @@ struct DailyHexagramProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (DailyHexagramEntry) -> Void) {
-        let entry = DailyHexagramEntry(date: Date(), hexagram: HexagramBasicInfo.all.randomElement() ?? HexagramBasicInfo.all[0])
+        // Use today's deterministic hexagram for snapshots (Apple recommends deterministic preview data)
+        let hexagramId = HexagramBasicInfo.dailyHexagramId(for: Date())
+        let entry = DailyHexagramEntry(date: Date(), hexagram: HexagramBasicInfo.all[hexagramId - 1])
         completion(entry)
     }
 
@@ -24,15 +26,19 @@ struct DailyHexagramProvider: TimelineProvider {
         let currentDate = Date()
         let calendar = Calendar.current
 
-        // Create entry for today using shared daily hexagram algorithm
-        let hexagramId = HexagramBasicInfo.dailyHexagramId(for: currentDate)
-        let hexagram = HexagramBasicInfo.all[hexagramId - 1]
-        let entry = DailyHexagramEntry(date: currentDate, hexagram: hexagram)
+        // Generate entries for today and the next 2 days to survive missed refreshes
+        var entries: [DailyHexagramEntry] = []
+        for dayOffset in 0..<3 {
+            guard let date = calendar.date(byAdding: .day, value: dayOffset, to: currentDate) else { continue }
+            let entryDate = dayOffset == 0 ? currentDate : calendar.startOfDay(for: date)
+            let hexagramId = HexagramBasicInfo.dailyHexagramId(for: entryDate)
+            let hexagram = HexagramBasicInfo.all[hexagramId - 1]
+            entries.append(DailyHexagramEntry(date: entryDate, hexagram: hexagram))
+        }
 
-        // Next update at midnight
-        let tomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate.addingTimeInterval(86400))
-
-        let timeline = Timeline(entries: [entry], policy: .after(tomorrow))
+        // Refresh after the last entry's midnight
+        let refreshDate = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 3, to: currentDate) ?? currentDate.addingTimeInterval(259200))
+        let timeline = Timeline(entries: entries, policy: .after(refreshDate))
         completion(timeline)
     }
 }
@@ -45,16 +51,18 @@ struct SmallWidgetView: View {
     var body: some View {
         VStack(spacing: 8) {
             Text(entry.hexagram.character)
-                .font(.system(size: 36))
+                .font(.largeTitle)
 
             Text(entry.hexagram.name)
                 .font(.caption.weight(.medium))
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
 
             Text(entry.hexagram.chineseName)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .containerBackground(.fill.tertiary, for: .widget)
@@ -92,6 +100,7 @@ struct MediumWidgetView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
 
             Spacer()
         }
@@ -143,14 +152,17 @@ struct DailyHexagramWidgetEntryView: View {
     let entry: DailyHexagramEntry
 
     var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallWidgetView(entry: entry)
-        case .systemMedium:
-            MediumWidgetView(entry: entry)
-        default:
-            SmallWidgetView(entry: entry)
+        Group {
+            switch family {
+            case .systemSmall:
+                SmallWidgetView(entry: entry)
+            case .systemMedium:
+                MediumWidgetView(entry: entry)
+            default:
+                SmallWidgetView(entry: entry)
+            }
         }
+        .widgetURL(URL(string: "iching://daily/\(entry.hexagram.id)"))
     }
 }
 

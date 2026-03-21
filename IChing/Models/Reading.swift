@@ -4,6 +4,10 @@ import SwiftData
 /// A single I Ching reading session
 @Model
 final class Reading {
+    #if swift(>=6.0)
+    #Index<Reading>([\.createdAt])
+    #endif
+
     var id: UUID
     var createdAt: Date
     var question: String
@@ -12,20 +16,12 @@ final class Reading {
     // Line values stored as array of raw integers (6, 7, 8, or 9), bottom to top
     var lineValuesRaw: [Int]
 
-    // Legacy fields kept for migration compatibility — not used in new code
-    var lineValue1: Int
-    var lineValue2: Int
-    var lineValue3: Int
-    var lineValue4: Int
-    var lineValue5: Int
-    var lineValue6: Int
-
     // Hexagram IDs for quick reference
     var primaryHexagramId: Int
     var relatingHexagramId: Int? // nil if no changing lines
 
     // Journal entries for this reading
-    @Relationship(deleteRule: .nullify, inverse: \JournalEntry.reading)
+    @Relationship(deleteRule: .cascade, inverse: \JournalEntry.reading)
     var journalEntries: [JournalEntry]
 
     // Method of divination
@@ -56,19 +52,12 @@ final class Reading {
         // Store as normalized array
         self.lineValuesRaw = lines.map(\.rawValue)
 
-        // Legacy fields (kept for backward compatibility)
-        self.lineValue1 = lines.indices.contains(0) ? lines[0].rawValue : 7
-        self.lineValue2 = lines.indices.contains(1) ? lines[1].rawValue : 7
-        self.lineValue3 = lines.indices.contains(2) ? lines[2].rawValue : 7
-        self.lineValue4 = lines.indices.contains(3) ? lines[3].rawValue : 7
-        self.lineValue5 = lines.indices.contains(4) ? lines[4].rawValue : 7
-        self.lineValue6 = lines.indices.contains(5) ? lines[5].rawValue : 7
-
         // Calculate hexagram IDs
         if let result = Hexagram.from(lineValues: lines) {
             self.primaryHexagramId = result.primary.id
             self.relatingHexagramId = result.relating?.id
         } else {
+            // This should never happen with valid LineValue inputs — log for debugging
             #if DEBUG
             print("Warning: Could not resolve hexagram from lines \(lines.map(\.rawValue)), defaulting to hexagram 1")
             #endif
@@ -77,16 +66,25 @@ final class Reading {
         }
     }
 
-    /// Reconstructs line values from stored data.
-    /// Prefers the normalized array; falls back to legacy individual fields.
-    var lineValues: [LineValue] {
-        let raw: [Int]
-        if !lineValuesRaw.isEmpty {
-            raw = lineValuesRaw
-        } else {
-            raw = [lineValue1, lineValue2, lineValue3, lineValue4, lineValue5, lineValue6]
+    /// Failable initializer that returns an error instead of silently defaulting
+    static func create(
+        question: String = "",
+        lines: [LineValue],
+        method: ReadingMethod = .coinFlip,
+        isDailyReading: Bool = false
+    ) -> Result<Reading, IChingError> {
+        guard lines.count == 6 else {
+            return .failure(.invalidLineCount(expected: 6, actual: lines.count))
         }
-        return raw.enumerated().map { index, rawVal in
+        guard Hexagram.from(lineValues: lines) != nil else {
+            return .failure(.hexagramResolutionFailed(lineValues: lines.map(\.rawValue)))
+        }
+        return .success(Reading(question: question, lines: lines, method: method, isDailyReading: isDailyReading))
+    }
+
+    /// Reconstructs line values from stored data
+    var lineValues: [LineValue] {
+        return lineValuesRaw.enumerated().map { index, rawVal in
             guard let value = LineValue(rawValue: rawVal) else {
                 #if DEBUG
                 print("Warning: Invalid line value \(rawVal) at position \(index + 1), defaulting to youngYang")
@@ -126,11 +124,15 @@ final class Reading {
         return _cachedRelating
     }
 
+    /// Populates transient hexagram cache on first access. Safe to call from
+    /// computed properties because Reading is a reference type (@Model class)
+    /// and @Transient properties are not observed by SwiftData.
     private func ensureHexagramCache() {
         guard !_hexagramsCached else { return }
-        _cachedPrimary = HexagramLibrary.shared.hexagram(number: primaryHexagramId)
+        let repository = HexagramLibrary.shared
+        _cachedPrimary = repository.hexagram(number: primaryHexagramId)
         if let relId = relatingHexagramId {
-            _cachedRelating = HexagramLibrary.shared.hexagram(number: relId)
+            _cachedRelating = repository.hexagram(number: relId)
         }
         _hexagramsCached = true
     }

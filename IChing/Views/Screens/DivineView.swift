@@ -7,6 +7,7 @@ struct DivineView: View {
     @State private var viewModel: DivineViewModel
     @State private var showingMethodPicker = false
     @State private var navigateToReading: Reading?
+    @State private var saveError: String?
 
     @MainActor
     init(viewModel: DivineViewModel? = nil, showingSettings: Binding<Bool> = .constant(false)) {
@@ -42,24 +43,16 @@ struct DivineView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             #endif
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #else
-                ToolbarItem(placement: .automatic) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-                #endif
-            }
+            .settingsToolbarButton(showingSettings: $showingSettings)
             .navigationDestination(item: $navigateToReading) { reading in
                 ReadingDetailView(reading: reading)
             }
+            .onChange(of: navigateToReading) { oldValue, newValue in
+                if oldValue != nil && newValue == nil {
+                    viewModel.reset()
+                }
+            }
+            .errorAlert($saveError, title: "Save Error")
         }
     }
     
@@ -94,6 +87,11 @@ struct DivineView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.cardBackground)
                 )
+                .onChange(of: viewModel.question) { _, newValue in
+                    if newValue.count > 500 {
+                        viewModel.question = String(newValue.prefix(500))
+                    }
+                }
         }
     }
     
@@ -184,6 +182,7 @@ struct DivineView: View {
             CoinFlipView(
                 coins: viewModel.currentCoins,
                 isFlipping: viewModel.isFlipping,
+                hasFlipped: viewModel.hasFlipped,
                 onFlip: { viewModel.flipCoins() }
             )
             
@@ -238,15 +237,23 @@ struct DivineView: View {
     }
     
     private func saveAndViewReading() {
-        let reading = Reading(
+        switch Reading.create(
             question: viewModel.question,
             lines: viewModel.completedLines,
             method: viewModel.selectedMethod
-        )
-        modelContext.insert(reading)
-        
-        navigateToReading = reading
-        viewModel.reset()
+        ) {
+        case .success(let reading):
+            modelContext.insert(reading)
+            do {
+                try modelContext.save()
+                navigateToReading = reading
+            } catch {
+                modelContext.delete(reading)
+                saveError = IChingError.saveFailed(underlying: error).localizedDescription
+            }
+        case .failure(let error):
+            saveError = error.localizedDescription
+        }
     }
 }
 

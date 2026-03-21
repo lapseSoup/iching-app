@@ -4,6 +4,10 @@ import SwiftData
 /// A journal reflection on a reading
 @Model
 final class JournalEntry {
+    #if swift(>=6.0)
+    #Index<JournalEntry>([\.createdAt])
+    #endif
+
     var id: UUID
     var createdAt: Date
     var updatedAt: Date
@@ -33,8 +37,10 @@ final class JournalEntry {
         DateFormatters.mediumDateTime.string(from: createdAt)
     }
     
+    private static let editThresholdSeconds: TimeInterval = 60
+
     var isEdited: Bool {
-        updatedAt.timeIntervalSince(createdAt) > 60 // More than 1 minute difference
+        updatedAt.timeIntervalSince(createdAt) > Self.editThresholdSeconds
     }
 }
 
