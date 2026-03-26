@@ -14,22 +14,12 @@ struct Line: Codable, Identifiable, Equatable {
     
     /// Whether this line is yang (solid) or yin (broken) for the primary hexagram
     var isYang: Bool {
-        value == .oldYang || value == .youngYang
+        value.isYang
     }
-    
+
     /// Whether this line is a changing/moving line
     var isChanging: Bool {
-        value == .oldYang || value == .oldYin
-    }
-    
-    /// The line value after transformation (for relating hexagram)
-    var transformedIsYang: Bool {
-        switch value {
-        case .oldYang: return false  // Old yang changes to young yin
-        case .oldYin: return true    // Old yin changes to young yang
-        case .youngYang: return true
-        case .youngYin: return false
-        }
+        value.isChanging
     }
 }
 
@@ -46,10 +36,6 @@ enum LineValue: Int, Codable, CaseIterable {
     
     var isChanging: Bool {
         self == .oldYang || self == .oldYin
-    }
-    
-    var displaySymbol: String {
-        isYang ? "━━━━━" : "━━ ━━"
     }
     
     var changingSymbol: String? {

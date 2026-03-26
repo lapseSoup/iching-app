@@ -25,7 +25,7 @@ final class NotificationService {
             isAuthorized = granted
             return granted
         } catch {
-            Self.logger.error("Notification authorization error: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Notification authorization error: \(error.localizedDescription)")
             return false
         }
     }
@@ -56,7 +56,7 @@ final class NotificationService {
             guard let targetDate = calendar.date(byAdding: .day, value: dayOffset, to: Date()) else { continue }
 
             let hexagramId = HexagramBasicInfo.dailyHexagramId(for: targetDate)
-            guard let hexagram = HexagramLibrary.shared.hexagram(number: hexagramId) else { continue }
+            guard (1...64).contains(hexagramId) else { continue }
 
             let content = UNMutableNotificationContent()
             content.title = "Daily Hexagram"
@@ -68,6 +68,11 @@ final class NotificationService {
             dateComponents.hour = timeComponents.hour
             dateComponents.minute = timeComponents.minute
             dateComponents.second = 0
+
+            // B-33: Skip notifications whose fire time has already passed
+            if let fireDate = calendar.date(from: dateComponents), fireDate < Date() {
+                continue
+            }
 
             let trigger = UNCalendarNotificationTrigger(
                 dateMatching: dateComponents,
@@ -83,7 +88,7 @@ final class NotificationService {
             do {
                 try await UNUserNotificationCenter.current().add(request)
             } catch {
-                Self.logger.error("Failed to schedule daily hexagram for day \(dayOffset): \(error.localizedDescription, privacy: .public)")
+                Self.logger.error("Failed to schedule daily hexagram for day \(dayOffset): \(error.localizedDescription)")
             }
         }
     }

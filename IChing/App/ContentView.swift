@@ -1,20 +1,11 @@
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var settingsArray: [AppSettings]
+    @Environment(\.settingsManager) private var settingsManager
+    @Environment(\.navigationCoordinator) private var navigationCoordinator
+    @Environment(\.hapticService) private var hapticService
     @State private var selectedTab: Tab = .divine
     @State private var showingSettings = false
-
-    private var preferredColorScheme: ColorScheme? {
-        guard let settings = settingsArray.first else { return nil }
-        switch settings.appColorScheme {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
-        }
-    }
     
     enum Tab: String, CaseIterable {
         case divine = "Divine"
@@ -44,9 +35,9 @@ struct ContentView: View {
             }
         }
         .tint(Color.accentColor)
-        .preferredColorScheme(preferredColorScheme)
-        .onAppear { ensureSettingsExist() }
-        .onChange(of: NavigationCoordinator.shared.pendingHexagramId) { _, newValue in
+        .preferredColorScheme(settingsManager?.preferredColorScheme)
+        .onAppear { syncHapticState() }
+        .onChange(of: navigationCoordinator.pendingHexagramId) { _, newValue in
             if newValue != nil {
                 selectedTab = .library
             }
@@ -65,17 +56,18 @@ struct ContentView: View {
         } detail: {
             tabContent(for: selectedTab)
         }
-        .preferredColorScheme(preferredColorScheme)
-        .onAppear { ensureSettingsExist() }
+        .preferredColorScheme(settingsManager?.preferredColorScheme)
+        .onAppear { syncHapticState() }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
         #endif
     }
 
-    private func ensureSettingsExist() {
-        if settingsArray.isEmpty {
-            modelContext.insert(AppSettings())
+    private func syncHapticState() {
+        if let settingsManager {
+            var service = hapticService
+            service.isEnabled = settingsManager.hapticFeedbackEnabled
         }
     }
     

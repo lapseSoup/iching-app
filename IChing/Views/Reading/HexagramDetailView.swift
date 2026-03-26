@@ -2,8 +2,18 @@ import SwiftUI
 
 struct HexagramDetailView: View {
     let hexagram: Hexagram
-    
-    @State private var selectedTab = 0
+
+    @Environment(\.settingsManager) private var settingsManager
+
+    private var showChinese: Bool {
+        settingsManager?.showChineseCharacters ?? true
+    }
+
+    private var showPinyin: Bool {
+        settingsManager?.showPinyin ?? true
+    }
+
+    @State private var selectedTab: HexagramTextSection = .judgment
     
     var body: some View {
         ScrollView {
@@ -24,30 +34,11 @@ struct HexagramDetailView: View {
     // MARK: - Header
     
     private var headerSection: some View {
-        VStack(spacing: 16) {
-            HexagramView(hexagram: hexagram, changingLines: [])
-                .frame(height: 180)
-            
-            VStack(spacing: 8) {
-                Text(hexagram.character)
-                    .font(.system(size: 48))
-                
-                Text(hexagram.englishName)
-                    .font(.title.weight(.semibold))
-                
-                HStack(spacing: 12) {
-                    Text(hexagram.chineseName)
-                        .font(.title2)
-                    Text(hexagram.pinyin)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.cardBackground)
+        HexagramHeaderCard(
+            hexagram: hexagram,
+            showChineseCharacters: showChinese,
+            showPinyin: showPinyin,
+            showCharacter: true
         )
     }
     
@@ -73,7 +64,7 @@ struct HexagramDetailView: View {
                 Text(trigram.englishName)
                     .font(.subheadline.weight(.medium))
                 
-                Text("\(trigram.chineseName) • \(trigram.element)")
+                Text(showChinese ? "\(trigram.chineseName) • \(trigram.element)" : trigram.element)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

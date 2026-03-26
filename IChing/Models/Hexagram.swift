@@ -25,11 +25,6 @@ struct Hexagram: Identifiable, Hashable {
         lowerTrigram.lines + upperTrigram.lines
     }
     
-    /// Unicode hexagram symbol
-    var symbol: String {
-        character
-    }
-    
     /// Creates the related/transformed hexagram by flipping changing lines
     func transformed(withChangingLines changingPositions: Set<Int>, using repository: HexagramRepository = HexagramLibrary.shared) -> Hexagram? {
         guard !changingPositions.isEmpty else { return nil }

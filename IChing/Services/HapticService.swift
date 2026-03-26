@@ -3,7 +3,7 @@ import Foundation
 import UIKit
 #endif
 
-enum HapticService {
+@MainActor enum HapticService {
     /// Set to false to disable all haptic feedback (respects AppSettings.hapticFeedbackEnabled)
     static var isEnabled: Bool = true
 

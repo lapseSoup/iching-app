@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct JournalListView: View {
     @Environment(\.modelContext) private var modelContext
@@ -7,6 +8,7 @@ struct JournalListView: View {
     @Query(sort: \JournalEntry.createdAt, order: .reverse) private var entries: [JournalEntry]
 
     @State private var searchText = ""
+    @State private var deleteError: String?
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
         _showingSettings = showingSettings
@@ -33,6 +35,7 @@ struct JournalListView: View {
             .navigationTitle("Journal")
             .searchable(text: $searchText, prompt: "Search journal")
             .settingsToolbarButton(showingSettings: $showingSettings)
+            .errorAlert($deleteError, title: "Delete Error")
         }
     }
     
@@ -64,6 +67,13 @@ struct JournalListView: View {
     private func deleteEntries(at offsets: IndexSet) {
         for index in offsets {
             modelContext.delete(filteredEntries[index])
+        }
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            AppLogger.persistence.error("Failed to delete journal entries: \(error.localizedDescription, privacy: .private)")
+            deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
         }
     }
 }
@@ -104,6 +114,18 @@ struct JournalEntryRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(entryAccessibilityLabel)
+    }
+
+    private var entryAccessibilityLabel: String {
+        var parts: [String] = [entry.formattedDate]
+        if let mood = entry.mood {
+            parts.append(mood.displayName)
+        }
+        let preview = entry.content.prefix(100)
+        parts.append(String(preview))
+        return parts.joined(separator: ", ")
     }
 }
 

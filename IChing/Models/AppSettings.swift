@@ -28,12 +28,12 @@ final class AppSettings {
     var preferredLanguage: String // "en", "zh"
 
     // Reading preferences
-    var defaultReadingMethod: String
+    var defaultReadingMethod: ReadingMethod
     var hapticFeedbackEnabled: Bool
     var soundEffectsEnabled: Bool
 
     // Appearance
-    var colorScheme: String // "system", "light", "dark"
+    var colorScheme: AppColorScheme
 
     // Privacy
     var iCloudSyncEnabled: Bool
@@ -53,20 +53,20 @@ final class AppSettings {
         self.showChineseCharacters = true
         self.showPinyin = true
         self.preferredLanguage = "en"
-        self.defaultReadingMethod = ReadingMethod.coinFlip.rawValue
+        self.defaultReadingMethod = .coinFlip
         self.hapticFeedbackEnabled = true
         self.soundEffectsEnabled = true
-        self.colorScheme = AppColorScheme.system.rawValue
+        self.colorScheme = .system
         self.iCloudSyncEnabled = false
     }
 
     var readingMethod: ReadingMethod {
-        get { ReadingMethod(rawValue: defaultReadingMethod) ?? .coinFlip }
-        set { defaultReadingMethod = newValue.rawValue }
+        get { defaultReadingMethod }
+        set { defaultReadingMethod = newValue }
     }
 
     var appColorScheme: AppColorScheme {
-        get { AppColorScheme(rawValue: colorScheme) ?? .system }
-        set { colorScheme = newValue.rawValue }
+        get { colorScheme }
+        set { colorScheme = newValue }
     }
 }

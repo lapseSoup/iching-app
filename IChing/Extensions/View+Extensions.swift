@@ -1,16 +1,6 @@
 import SwiftUI
 
 extension View {
-    /// Conditionally apply a modifier
-    @ViewBuilder
-    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
-        }
-    }
-
     /// Adds a settings gear button to the toolbar (Q-25)
     func settingsToolbarButton(showingSettings: Binding<Bool>) -> some View {
         self.toolbar {
@@ -19,12 +9,14 @@ extension View {
                 Button { showingSettings.wrappedValue = true } label: {
                     Image(systemName: "gearshape")
                 }
+                .accessibilityLabel("Settings")
             }
             #else
             ToolbarItem(placement: .automatic) {
                 Button { showingSettings.wrappedValue = true } label: {
                     Image(systemName: "gearshape")
                 }
+                .accessibilityLabel("Settings")
             }
             #endif
         }

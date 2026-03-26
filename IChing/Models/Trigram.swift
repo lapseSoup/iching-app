@@ -96,35 +96,7 @@ enum Trigram: Int, Codable, CaseIterable, Identifiable {
         case .earth:    return "Earth"
         }
     }
-    
-    /// Associated quality
-    var quality: String {
-        switch self {
-        case .heaven:   return "Strong"
-        case .lake:     return "Joyful"
-        case .fire:     return "Radiant"
-        case .thunder:  return "Inciting"
-        case .wind:     return "Penetrating"
-        case .water:    return "Dangerous"
-        case .mountain: return "Resting"
-        case .earth:    return "Yielding"
-        }
-    }
-    
-    /// Family member association
-    var familyMember: String {
-        switch self {
-        case .heaven:   return "Father"
-        case .lake:     return "Youngest Daughter"
-        case .fire:     return "Middle Daughter"
-        case .thunder:  return "Eldest Son"
-        case .wind:     return "Eldest Daughter"
-        case .water:    return "Middle Son"
-        case .mountain: return "Youngest Son"
-        case .earth:    return "Mother"
-        }
-    }
-    
+
     /// O(1) lookup from three lines (bottom to top)
     private static let lineMap: [[Bool]: Trigram] = {
         var map = [[Bool]: Trigram]()

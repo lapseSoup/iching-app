@@ -3,14 +3,26 @@ import SwiftUI
 struct LibraryView: View {
     @Binding var showingSettings: Bool
     @State private var searchText = ""
-    @State private var deepLinkHexagram: Hexagram?
+    @State private var path = NavigationPath()
+
+    @Environment(\.settingsManager) private var settingsManager
+    @Environment(\.navigationCoordinator) private var navigationCoordinator
+    @Environment(\.hexagramRepository) private var hexagramRepository
+
+    private var showChineseCharacters: Bool {
+        settingsManager?.showChineseCharacters ?? true
+    }
+
+    private var showPinyin: Bool {
+        settingsManager?.showPinyin ?? true
+    }
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
         _showingSettings = showingSettings
     }
-    
-    private let hexagrams = HexagramLibrary.shared.hexagrams
-    
+
+    private var hexagrams: [Hexagram] { hexagramRepository.hexagrams }
+
     private var filteredHexagrams: [Hexagram] {
         if searchText.isEmpty {
             return hexagrams
@@ -22,16 +34,19 @@ struct LibraryView: View {
             String(hex.id).contains(searchText)
         }
     }
-    
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 LazyVGrid(columns: [
                     GridItem(.adaptive(minimum: 140, maximum: 180), spacing: 16)
                 ], spacing: 16) {
                     ForEach(filteredHexagrams) { hexagram in
                         NavigationLink(value: hexagram) {
-                            HexagramCard(hexagram: hexagram)
+                            HexagramCard(
+                                hexagram: hexagram,
+                                showChineseCharacters: showChineseCharacters
+                            )
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Hexagram \(hexagram.id), \(hexagram.englishName), \(hexagram.chineseName)")
@@ -45,20 +60,10 @@ struct LibraryView: View {
             .navigationDestination(for: Hexagram.self) { hexagram in
                 HexagramDetailView(hexagram: hexagram)
             }
-            .navigationDestination(item: $deepLinkHexagram) { hexagram in
-                HexagramDetailView(hexagram: hexagram)
-            }
-            .onAppear {
-                if let id = NavigationCoordinator.shared.consumePendingHexagram(),
-                   let hexagram = HexagramLibrary.shared.hexagram(number: id) {
-                    deepLinkHexagram = hexagram
-                }
-            }
-            .onChange(of: NavigationCoordinator.shared.pendingHexagramId) { _, newValue in
-                if let id = newValue,
-                   let hexagram = HexagramLibrary.shared.hexagram(number: id) {
-                    _ = NavigationCoordinator.shared.consumePendingHexagram()
-                    deepLinkHexagram = hexagram
+            .onChange(of: navigationCoordinator.pendingHexagramId) { _, _ in
+                if let id = navigationCoordinator.consumePendingHexagram(),
+                   let hexagram = hexagramRepository.hexagram(number: id) {
+                    path.append(hexagram)
                 }
             }
         }
@@ -67,23 +72,26 @@ struct LibraryView: View {
 
 struct HexagramCard: View {
     let hexagram: Hexagram
-    
+    let showChineseCharacters: Bool
+
     var body: some View {
         VStack(spacing: 12) {
             // Hexagram symbol
             Text(hexagram.character)
                 .font(.system(size: 40))
-            
+
             VStack(spacing: 4) {
                 Text("\(hexagram.id). \(hexagram.englishName)")
                     .font(.caption)
                     .fontWeight(.medium)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                
-                Text(hexagram.chineseName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+
+                if showChineseCharacters {
+                    Text(hexagram.chineseName)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .frame(maxWidth: .infinity)

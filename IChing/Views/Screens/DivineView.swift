@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct DivineView: View {
     @Environment(\.modelContext) private var modelContext
@@ -88,8 +89,16 @@ struct DivineView: View {
                         .fill(Color.cardBackground)
                 )
                 .onChange(of: viewModel.question) { _, newValue in
-                    if newValue.count > 500 {
-                        viewModel.question = String(newValue.prefix(500))
+                    // Strip Unicode control characters (Cc/Cf) except newlines and tabs
+                    let sanitized = String(newValue.unicodeScalars.filter { scalar in
+                        if scalar == "\n" || scalar == "\t" || scalar == "\r" { return true }
+                        if CharacterSet.controlCharacters.contains(scalar) { return false }
+                        if scalar.properties.generalCategory == .format { return false }
+                        return true
+                    })
+                    let trimmed = sanitized.count > 500 ? String(sanitized.prefix(500)) : sanitized
+                    if trimmed != newValue {
+                        viewModel.question = trimmed
                     }
                 }
         }
@@ -104,8 +113,8 @@ struct DivineView: View {
                 .foregroundStyle(.secondary)
             
             HStack(spacing: 12) {
-                methodButton(method: .coinFlip, icon: "circle.circle", title: "Coin Flip")
-                methodButton(method: .manual, icon: "hand.tap", title: "Manual")
+                methodButton(method: .coinFlip, icon: ReadingMethod.coinFlip.icon, title: "Coin Flip")
+                methodButton(method: .manual, icon: ReadingMethod.manual.icon, title: "Manual")
             }
         }
     }
@@ -248,7 +257,8 @@ struct DivineView: View {
                 try modelContext.save()
                 navigateToReading = reading
             } catch {
-                modelContext.delete(reading)
+                modelContext.rollback()
+                AppLogger.persistence.error("Failed to save reading: \(error.localizedDescription, privacy: .private)")
                 saveError = IChingError.saveFailed(underlying: error).localizedDescription
             }
         case .failure(let error):

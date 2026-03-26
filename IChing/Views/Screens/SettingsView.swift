@@ -3,19 +3,13 @@ import SwiftData
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.settingsManager) private var settingsManager
+    @Environment(\.notificationService) private var notificationService
+    @Environment(\.hapticService) private var hapticService
 
-    @Query private var settingsArray: [AppSettings]
-
-    private var settings: AppSettings {
-        if let existing = settingsArray.first {
-            return existing
-        }
-        // Insert singleton if missing (race with ContentView.onAppear)
-        let newSettings = AppSettings()
-        modelContext.insert(newSettings)
-        return newSettings
-    }
+    /// Convenience accessor; force-unwrap is safe because SettingsManager
+    /// is always injected at the app root before any view appears.
+    private var settings: SettingsManager { settingsManager! }
 
     var body: some View {
         NavigationStack {
@@ -63,17 +57,10 @@ struct SettingsView: View {
                     #if os(iOS)
                     Toggle("Haptic Feedback", isOn: Binding(
                         get: { settings.hapticFeedbackEnabled },
-                        set: {
-                            settings.hapticFeedbackEnabled = $0
-                            HapticService.isEnabled = $0
-                        }
+                        set: { settings.hapticFeedbackEnabled = $0 }
                     ))
                     #endif
                     
-                    Toggle("Sound Effects", isOn: Binding(
-                        get: { settings.soundEffectsEnabled },
-                        set: { settings.soundEffectsEnabled = $0 }
-                    ))
                 }
                 
                 Section {
@@ -119,7 +106,25 @@ struct SettingsView: View {
                 }
             }
             .onAppear {
-                HapticService.isEnabled = settings.hapticFeedbackEnabled
+                // Sync haptic state on appear (SettingsManager also syncs on set)
+                var service = hapticService
+                service.isEnabled = settings.hapticFeedbackEnabled
+            }
+            .onChange(of: settings.dailyHexagramEnabled) { _, enabled in
+                Task {
+                    if enabled {
+                        await notificationService.scheduleDailyHexagram(at: settings.dailyNotificationTime)
+                    } else {
+                        notificationService.cancelDailyNotifications()
+                    }
+                }
+            }
+            .onChange(of: settings.dailyNotificationTime) { _, newTime in
+                if settings.dailyHexagramEnabled {
+                    Task {
+                        await notificationService.scheduleDailyHexagram(at: newTime)
+                    }
+                }
             }
         }
     }
@@ -191,7 +196,26 @@ struct AcknowledgmentsView: View {
     }
 }
 
+private struct SettingsViewPreview: View {
+    @State private var manager: SettingsManager?
+    let container: ModelContainer
+
+    init() {
+        container = try! ModelContainer(for: AppSettings.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    }
+
+    var body: some View {
+        SettingsView()
+            .modelContainer(container)
+            .environment(\.settingsManager, manager)
+            .onAppear {
+                if manager == nil {
+                    manager = SettingsManager(modelContext: container.mainContext)
+                }
+            }
+    }
+}
+
 #Preview {
-    SettingsView()
-        .modelContainer(for: [AppSettings.self], inMemory: true)
+    SettingsViewPreview()
 }

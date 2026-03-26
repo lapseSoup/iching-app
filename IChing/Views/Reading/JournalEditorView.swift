@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct JournalEditorView: View {
     @Environment(\.dismiss) private var dismiss
@@ -103,6 +104,8 @@ struct JournalEditorView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedMood == mood ? .isSelected : [])
+        .accessibilityLabel("\(mood.displayName) mood")
     }
     
     private func save() {
@@ -117,12 +120,15 @@ struct JournalEditorView: View {
             try modelContext.save()
             dismiss()
         } catch {
+            modelContext.rollback()
+            AppLogger.persistence.error("Failed to save journal entry: \(error.localizedDescription, privacy: .private)")
             saveError = IChingError.saveFailed(underlying: error).localizedDescription
         }
     }
 }
 
 struct JournalEntryDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     let entry: JournalEntry
     
@@ -200,7 +206,8 @@ struct JournalEntryDetailView: View {
                 } label: {
                     Image(systemName: "pencil")
                 }
-                
+                .disabled(entry.reading == nil)
+
                 Button(role: .destructive) {
                     showingDeleteAlert = true
                 } label: {
@@ -219,8 +226,10 @@ struct JournalEntryDetailView: View {
                 modelContext.delete(entry)
                 do {
                     try modelContext.save()
+                    dismiss()
                 } catch {
                     modelContext.rollback()
+                    AppLogger.persistence.error("Failed to delete journal entry: \(error.localizedDescription, privacy: .private)")
                     deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
                 }
             }

@@ -129,18 +129,25 @@ struct HexagramBuildingView: View {
     }
 }
 
+/// Tab sections for hexagram text display
+enum HexagramTextSection: Int, CaseIterable {
+    case judgment
+    case image
+    case commentary
+}
+
 /// Reusable Judgment / Image / Commentary tab section for a hexagram
 struct HexagramTextTabView: View {
     let hexagram: Hexagram
-    @Binding var selectedTab: Int
+    @Binding var selectedTab: HexagramTextSection
     var showSectionHeaders: Bool = false
 
     var body: some View {
         VStack(spacing: 16) {
             Picker("Section", selection: $selectedTab) {
-                Text("Judgment").tag(0)
-                Text("Image").tag(1)
-                Text("Commentary").tag(2)
+                Text("Judgment").tag(HexagramTextSection.judgment)
+                Text("Image").tag(HexagramTextSection.image)
+                Text("Commentary").tag(HexagramTextSection.commentary)
             }
             .pickerStyle(.segmented)
 
@@ -165,17 +172,17 @@ struct HexagramTextTabView: View {
 
     private var sectionTitle: String {
         switch selectedTab {
-        case 0: return "The Judgment"
-        case 1: return "The Image"
-        default: return "Commentary"
+        case .judgment: return "The Judgment"
+        case .image: return "The Image"
+        case .commentary: return "Commentary"
         }
     }
 
     private var sectionText: String {
         switch selectedTab {
-        case 0: return hexagram.judgment
-        case 1: return hexagram.image
-        default: return hexagram.commentary
+        case .judgment: return hexagram.judgment
+        case .image: return hexagram.image
+        case .commentary: return hexagram.commentary
         }
     }
 }

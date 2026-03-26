@@ -1,5 +1,36 @@
 import SwiftUI
 import SwiftData
+import os
+
+/// Groups readings by date category (Today, Yesterday, This Week, This Month, or month/year)
+/// and sorts by chronological order with predefined groups first.
+/// - Parameter referenceDate: The date to compare against (defaults to now; pass explicitly for deterministic testing).
+func groupReadingsByDate(_ readings: [Reading], referenceDate: Date = Date()) -> [(String, [Reading])] {
+    let calendar = Calendar.current
+    let grouped = Dictionary(grouping: readings) { reading -> String in
+        if calendar.isDateInToday(reading.createdAt) {
+            return "Today"
+        } else if calendar.isDateInYesterday(reading.createdAt) {
+            return "Yesterday"
+        } else if calendar.isDate(reading.createdAt, equalTo: referenceDate, toGranularity: .weekOfYear) {
+            return "This Week"
+        } else if calendar.isDate(reading.createdAt, equalTo: referenceDate, toGranularity: .month) {
+            return "This Month"
+        } else {
+            return DateFormatters.monthYear.string(from: reading.createdAt)
+        }
+    }
+
+    let order = ["Today", "Yesterday", "This Week", "This Month"]
+    return grouped.sorted { a, b in
+        let aIndex = order.firstIndex(of: a.key) ?? Int.max
+        let bIndex = order.firstIndex(of: b.key) ?? Int.max
+        if aIndex != Int.max || bIndex != Int.max {
+            return aIndex < bIndex
+        }
+        return (a.value.first?.createdAt ?? Date()) > (b.value.first?.createdAt ?? Date())
+    }
+}
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
@@ -8,11 +39,12 @@ struct HistoryView: View {
 
     @State private var searchText = ""
     @State private var deleteError: String?
+    @State private var groupedReadings: [(String, [Reading])] = []
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
         _showingSettings = showingSettings
     }
-    
+
     private var filteredReadings: [Reading] {
         if searchText.isEmpty {
             return readings
@@ -22,32 +54,9 @@ struct HistoryView: View {
             (reading.primaryHexagram?.englishName.localizedCaseInsensitiveContains(searchText) ?? false)
         }
     }
-    
-    private var groupedReadings: [(String, [Reading])] {
-        let calendar = Calendar.current
-        let grouped = Dictionary(grouping: filteredReadings) { reading -> String in
-            if calendar.isDateInToday(reading.createdAt) {
-                return "Today"
-            } else if calendar.isDateInYesterday(reading.createdAt) {
-                return "Yesterday"
-            } else if calendar.isDate(reading.createdAt, equalTo: Date(), toGranularity: .weekOfYear) {
-                return "This Week"
-            } else if calendar.isDate(reading.createdAt, equalTo: Date(), toGranularity: .month) {
-                return "This Month"
-            } else {
-                return DateFormatters.monthYear.string(from: reading.createdAt)
-            }
-        }
-        
-        let order = ["Today", "Yesterday", "This Week", "This Month"]
-        return grouped.sorted { a, b in
-            let aIndex = order.firstIndex(of: a.key) ?? Int.max
-            let bIndex = order.firstIndex(of: b.key) ?? Int.max
-            if aIndex != Int.max || bIndex != Int.max {
-                return aIndex < bIndex
-            }
-            return (a.value.first?.createdAt ?? Date()) > (b.value.first?.createdAt ?? Date())
-        }
+
+    private func recomputeGroupedReadings() {
+        groupedReadings = groupReadingsByDate(filteredReadings)
     }
     
     var body: some View {
@@ -63,6 +72,9 @@ struct HistoryView: View {
             .searchable(text: $searchText, prompt: "Search readings")
             .errorAlert($deleteError, title: "Delete Error")
             .settingsToolbarButton(showingSettings: $showingSettings)
+            .onAppear { recomputeGroupedReadings() }
+            .onChange(of: readings) { recomputeGroupedReadings() }
+            .onChange(of: searchText) { recomputeGroupedReadings() }
         }
     }
     
@@ -95,6 +107,12 @@ struct HistoryView: View {
         .navigationDestination(for: Reading.self) { reading in
             ReadingDetailView(reading: reading)
         }
+        .navigationDestination(for: Hexagram.self) { hexagram in
+            HexagramDetailView(hexagram: hexagram)
+        }
+        .navigationDestination(for: JournalEntry.self) { entry in
+            JournalEntryDetailView(entry: entry)
+        }
     }
     
     private func deleteReadings(at offsets: IndexSet, in readings: [Reading]) {
@@ -104,6 +122,8 @@ struct HistoryView: View {
         do {
             try modelContext.save()
         } catch {
+            modelContext.rollback()
+            AppLogger.persistence.error("Failed to delete readings: \(error.localizedDescription, privacy: .private)")
             deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
         }
     }
@@ -157,6 +177,23 @@ struct ReadingRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(readingAccessibilityLabel)
+    }
+
+    private var readingAccessibilityLabel: String {
+        var parts: [String] = []
+        if let hexagram = reading.primaryHexagram {
+            parts.append(hexagram.englishName)
+        }
+        parts.append(reading.shortDate)
+        if !reading.question.isEmpty {
+            parts.append(reading.question)
+        }
+        if reading.hasChangingLines, let relating = reading.relatingHexagram {
+            parts.append("changing to \(relating.englishName)")
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

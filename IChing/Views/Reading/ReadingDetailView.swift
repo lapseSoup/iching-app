@@ -6,7 +6,7 @@ struct ReadingDetailView: View {
     let reading: Reading
     
     @State private var showingJournalEditor = false
-    @State private var selectedTab = 0
+    @State private var selectedTab: HexagramTextSection = .judgment
     
     var body: some View {
         ScrollView {
@@ -65,34 +65,14 @@ struct ReadingDetailView: View {
     // MARK: - Primary Hexagram
     
     private var hexagramSection: some View {
-        VStack(spacing: 20) {
+        Group {
             if let hexagram = reading.primaryHexagram {
-                HexagramView(hexagram: hexagram, changingLines: reading.changingLinePositions)
-                    .frame(height: 200)
-                
-                VStack(spacing: 8) {
-                    Text("Hexagram \(hexagram.id)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(hexagram.englishName)
-                        .font(.title.weight(.semibold))
-                    
-                    HStack(spacing: 12) {
-                        Text(hexagram.chineseName)
-                            .font(.title2)
-                        Text(hexagram.pinyin)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                HexagramHeaderCard(
+                    hexagram: hexagram,
+                    changingLines: reading.changingLinePositions
+                )
             }
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.cardBackground)
-        )
     }
     
     // MARK: - Changing Lines
@@ -179,9 +159,6 @@ struct ReadingDetailView: View {
                 .buttonStyle(.plain)
             }
         }
-        .navigationDestination(for: Hexagram.self) { hexagram in
-            HexagramDetailView(hexagram: hexagram)
-        }
     }
     
     // MARK: - Tab Section (Judgment, Image, Commentary)
@@ -225,9 +202,6 @@ struct ReadingDetailView: View {
                     .buttonStyle(.plain)
                 }
             }
-        }
-        .navigationDestination(for: JournalEntry.self) { entry in
-            JournalEntryDetailView(entry: entry)
         }
     }
 }

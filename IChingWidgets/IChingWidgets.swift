@@ -31,7 +31,9 @@ struct DailyHexagramProvider: TimelineProvider {
         for dayOffset in 0..<3 {
             guard let date = calendar.date(byAdding: .day, value: dayOffset, to: currentDate) else { continue }
             let entryDate = dayOffset == 0 ? currentDate : calendar.startOfDay(for: date)
-            let hexagramId = HexagramBasicInfo.dailyHexagramId(for: entryDate)
+            // B-32: Always normalize to startOfDay for consistent hexagram ID across DST transitions
+            let hexagramDate = calendar.startOfDay(for: date)
+            let hexagramId = HexagramBasicInfo.dailyHexagramId(for: hexagramDate)
             let hexagram = HexagramBasicInfo.all[hexagramId - 1]
             entries.append(DailyHexagramEntry(date: entryDate, hexagram: hexagram))
         }
@@ -53,7 +55,7 @@ struct SmallWidgetView: View {
             Text(entry.hexagram.character)
                 .font(.largeTitle)
 
-            Text(entry.hexagram.name)
+            Text(entry.hexagram.englishName)
                 .font(.caption.weight(.medium))
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
@@ -67,7 +69,7 @@ struct SmallWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .containerBackground(.fill.tertiary, for: .widget)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Daily Hexagram: \(entry.hexagram.name), \(entry.hexagram.chineseName)")
+        .accessibilityLabel("Daily Hexagram: \(entry.hexagram.englishName), \(entry.hexagram.chineseName)")
     }
 }
 
@@ -89,7 +91,7 @@ struct MediumWidgetView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text(entry.hexagram.name)
+                Text(entry.hexagram.englishName)
                     .font(.headline)
 
                 HStack(spacing: 4) {
@@ -107,10 +109,14 @@ struct MediumWidgetView: View {
         .padding()
         .containerBackground(.fill.tertiary, for: .widget)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Daily Hexagram: number \(entry.hexagram.id), \(entry.hexagram.name), \(entry.hexagram.chineseName)")
+        .accessibilityLabel("Daily Hexagram: number \(entry.hexagram.id), \(entry.hexagram.englishName), \(entry.hexagram.chineseName)")
     }
 }
 
+/// Simplified line view for widget rendering. Intentionally duplicates the main target's
+/// `LineView` because widget extensions cannot import the main app target. Both views
+/// consume `HexagramBasicInfo.lines` (from the shared `HexagramBasicData` module) as their
+/// data source, so the visual representation stays in sync even though the code is separate.
 struct WidgetLineView: View {
     let isYang: Bool
 

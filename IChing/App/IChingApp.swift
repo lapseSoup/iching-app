@@ -1,8 +1,10 @@
 import SwiftUI
 import SwiftData
+import os.log
 
 // MARK: - Schema Versioning
 
+// V1: Initial schema — Reading (with individual lineValue1-6 properties), JournalEntry, AppSettings
 enum IChingSchemaV1: VersionedSchema {
     static var versionIdentifier = Schema.Version(1, 0, 0)
     static var models: [any PersistentModel.Type] {
@@ -10,6 +12,7 @@ enum IChingSchemaV1: VersionedSchema {
     }
 }
 
+// V2: Added lineValuesRaw array to Reading, iCloudSyncEnabled to AppSettings
 enum IChingSchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
     static var models: [any PersistentModel.Type] {
@@ -17,6 +20,7 @@ enum IChingSchemaV2: VersionedSchema {
     }
 }
 
+// V3: Removed legacy lineValue1-6 individual fields from Reading (now uses lineValuesRaw array only)
 enum IChingSchemaV3: VersionedSchema {
     static var versionIdentifier = Schema.Version(3, 0, 0)
     static var models: [any PersistentModel.Type] {
@@ -24,13 +28,21 @@ enum IChingSchemaV3: VersionedSchema {
     }
 }
 
+// V4: Converted AppSettings.colorScheme and .defaultReadingMethod from raw Strings to Codable enums
+enum IChingSchemaV4: VersionedSchema {
+    static var versionIdentifier = Schema.Version(4, 0, 0)
+    static var models: [any PersistentModel.Type] {
+        [Reading.self, JournalEntry.self, AppSettings.self]
+    }
+}
+
 enum IChingMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [IChingSchemaV1.self, IChingSchemaV2.self, IChingSchemaV3.self]
+        [IChingSchemaV1.self, IChingSchemaV2.self, IChingSchemaV3.self, IChingSchemaV4.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4]
     }
 
     // V1→V2: Adds lineValuesRaw array and iCloudSyncEnabled to AppSettings.
@@ -46,13 +58,24 @@ enum IChingMigrationPlan: SchemaMigrationPlan {
         fromVersion: IChingSchemaV2.self,
         toVersion: IChingSchemaV3.self
     )
+
+    // V3→V4: Converts colorScheme and defaultReadingMethod from String to Codable enum.
+    // Lightweight migration — SwiftData stores Codable enums as their raw value, so the
+    // underlying column type (String) is unchanged and no data transformation is needed.
+    static let migrateV3toV4 = MigrationStage.lightweight(
+        fromVersion: IChingSchemaV3.self,
+        toVersion: IChingSchemaV4.self
+    )
 }
 
 @main
 struct IChingApp: App {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.iching.app", category: "App")
+
     let modelContainer: ModelContainer?
     private let initError: String?
     @State private var didResetDatabase = false
+    @State private var settingsManager: SettingsManager?
 
     init() {
         do {
@@ -91,16 +114,24 @@ struct IChingApp: App {
     private static func resetDatabase() -> Bool {
         guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return false }
         let fileManager = FileManager.default
-        // Match all .store files and their WAL/SHM companions
         let extensions = ["store", "store-shm", "store-wal"]
-        var deleted = false
+        var primaryStoreDeleted = false
         if let contents = try? fileManager.contentsOfDirectory(at: appSupportURL, includingPropertiesForKeys: nil) {
             for url in contents where extensions.contains(where: { url.pathExtension == $0 }) {
-                try? fileManager.removeItem(at: url)
-                deleted = true
+                do {
+                    try fileManager.removeItem(at: url)
+                    if url.pathExtension == "store" {
+                        primaryStoreDeleted = true
+                    }
+                } catch {
+                    // If primary .store file failed to delete, report failure
+                    if url.pathExtension == "store" {
+                        return false
+                    }
+                }
             }
         }
-        return deleted
+        return primaryStoreDeleted
     }
 
     /// Sets NSFileProtection on the SwiftData store directory to encrypt at rest.
@@ -108,10 +139,14 @@ struct IChingApp: App {
     private static func enableDataProtection() {
         #if os(iOS)
         guard let storeURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
-        try? FileManager.default.setAttributes(
-            [.protectionKey: FileProtectionType.complete],
-            ofItemAtPath: storeURL.path
-        )
+        do {
+            try FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.complete],
+                ofItemAtPath: storeURL.path
+            )
+        } catch {
+            logger.error("Failed to enable data protection: \(error.localizedDescription, privacy: .public)")
+        }
         #endif
     }
 
@@ -120,6 +155,16 @@ struct IChingApp: App {
             if let modelContainer {
                 ContentView()
                     .modelContainer(modelContainer)
+                    .environment(\.settingsManager, settingsManager)
+                    .environment(\.navigationCoordinator, NavigationCoordinator.shared)
+                    .environment(\.notificationService, NotificationService.shared)
+                    .environment(\.hexagramRepository, HexagramLibrary.shared)
+                    .environment(\.hapticService, HapticServiceAdapter())
+                    .onAppear {
+                        if settingsManager == nil {
+                            settingsManager = SettingsManager(modelContext: modelContainer.mainContext)
+                        }
+                    }
                     .onOpenURL { url in
                         NavigationCoordinator.shared.handle(url: url)
                     }
@@ -139,11 +184,16 @@ struct IChingApp: App {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     } else {
-                        Text(initError ?? "An unknown error occurred.")
+                        Text("The app was unable to load its data store. This may be due to a corrupted database or a software update.")
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
+                            .onAppear {
+                                if let initError {
+                                    Self.logger.error("ModelContainer init failed: \(initError, privacy: .private)")
+                                }
+                            }
                         Text("Try restarting the app. If this persists, tap Reset Data below.")
                             .font(.caption)
                             .foregroundStyle(.tertiary)

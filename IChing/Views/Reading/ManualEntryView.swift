@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ManualEntryView: View {
     @Environment(\.dismiss) private var dismiss
-    @Bindable var viewModel: DivineViewModel
+    let viewModel: DivineViewModel
     
     @State private var lines: [LineValue] = Array(repeating: .youngYang, count: 6)
     
@@ -61,6 +61,7 @@ struct ManualEntryView: View {
                 ForEach(LineValue.allCases, id: \.self) { value in
                     Text(labelFor(value))
                         .tag(value)
+                        .accessibilityLabel(accessibilityLabelFor(value))
                 }
             }
             .pickerStyle(.segmented)
@@ -73,6 +74,15 @@ struct ManualEntryView: View {
         case .youngYang: return "7 ⚊"
         case .youngYin: return "8 ⚋"
         case .oldYang: return "9 ⚊○"
+        }
+    }
+
+    private func accessibilityLabelFor(_ value: LineValue) -> String {
+        switch value {
+        case .oldYin: return "6, Old Yin, changing broken line"
+        case .youngYang: return "7, Young Yang, solid line"
+        case .youngYin: return "8, Young Yin, broken line"
+        case .oldYang: return "9, Old Yang, changing solid line"
         }
     }
     
