@@ -25,15 +25,23 @@ struct Hexagram: Identifiable, Hashable {
         lowerTrigram.lines + upperTrigram.lines
     }
     
-    /// Creates the related/transformed hexagram by flipping changing lines
-    func transformed(withChangingLines changingPositions: Set<Int>, using repository: HexagramRepository = HexagramLibrary.shared) -> Hexagram? {
+    /// Creates the related/transformed hexagram by flipping changing lines.
+    /// Returns `nil` when no valid (1...6) position was toggled.
+    ///
+    /// A-44: The default `repository` resolves to `Hexagrams.current` — a single
+    /// process-wide override-point that tests can swap. Pass an explicit `repository`
+    /// argument when concurrency or test isolation requires it.
+    func transformed(withChangingLines changingPositions: Set<Int>, using repository: HexagramRepository = Hexagrams.current) -> Hexagram? {
         guard !changingPositions.isEmpty else { return nil }
 
         var newLines = lines
+        var didToggle = false
         for position in changingPositions {
             guard position >= 1 && position <= 6 else { continue }
             newLines[position - 1].toggle()
+            didToggle = true
         }
+        guard didToggle else { return nil }
 
         return repository.hexagram(forLines: newLines)
     }
@@ -57,8 +65,9 @@ struct LineMeaning: Identifiable {
 
 /// Extension for convenience initializers
 extension Hexagram {
-    /// Creates hexagram from six line values
-    static func from(lineValues: [LineValue], using repository: HexagramRepository = HexagramLibrary.shared) -> (primary: Hexagram, relating: Hexagram?)? {
+    /// Creates hexagram from six line values.
+    /// A-44: default repository resolves to `Hexagrams.current` (see `Hexagrams` enum).
+    static func from(lineValues: [LineValue], using repository: HexagramRepository = Hexagrams.current) -> (primary: Hexagram, relating: Hexagram?)? {
         guard lineValues.count == 6 else { return nil }
 
         let lines = lineValues.map { $0.isYang }

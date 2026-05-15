@@ -9,20 +9,23 @@ struct JournalListView: View {
 
     @State private var searchText = ""
     @State private var deleteError: String?
+    /// Q-63: memoized filter result. Recomputed only when entries or searchText change.
+    @State private var filteredEntries: [JournalEntry] = []
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
         _showingSettings = showingSettings
     }
-    
-    private var filteredEntries: [JournalEntry] {
+
+    private func recomputeFilteredEntries() {
         if searchText.isEmpty {
-            return entries
-        }
-        return entries.filter { entry in
-            entry.content.localizedCaseInsensitiveContains(searchText)
+            filteredEntries = entries
+        } else {
+            filteredEntries = entries.filter { entry in
+                entry.content.localizedCaseInsensitiveContains(searchText)
+            }
         }
     }
-    
+
     var body: some View {
         NavigationStack {
             Group {
@@ -36,6 +39,9 @@ struct JournalListView: View {
             .searchable(text: $searchText, prompt: "Search journal")
             .settingsToolbarButton(showingSettings: $showingSettings)
             .errorAlert($deleteError, title: "Delete Error")
+            .onAppear { recomputeFilteredEntries() }
+            .onChange(of: entries) { recomputeFilteredEntries() }
+            .onChange(of: searchText) { recomputeFilteredEntries() }
         }
     }
     
@@ -68,11 +74,7 @@ struct JournalListView: View {
         for index in offsets {
             modelContext.delete(filteredEntries[index])
         }
-        do {
-            try modelContext.save()
-        } catch {
-            modelContext.rollback()
-            AppLogger.persistence.error("Failed to delete journal entries: \(error.localizedDescription, privacy: .private)")
+        modelContext.safeSave(operation: "delete journal entries") { error in
             deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
         }
     }

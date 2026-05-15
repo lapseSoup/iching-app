@@ -75,9 +75,13 @@ struct IChingApp: App {
     let modelContainer: ModelContainer?
     private let initError: String?
     @State private var didResetDatabase = false
+    // A-48: SettingsManager is initialized synchronously in init() so the first body
+    // evaluation already sees real settings — no one-frame default-flicker.
     @State private var settingsManager: SettingsManager?
 
     init() {
+        let container: ModelContainer?
+        let errorMessage: String?
         do {
             let schema = Schema([
                 Reading.self,
@@ -94,15 +98,27 @@ struct IChingApp: App {
                 cloudKitDatabase: .none
             )
 
-            modelContainer = try ModelContainer(
+            container = try ModelContainer(
                 for: schema,
                 migrationPlan: IChingMigrationPlan.self,
                 configurations: [modelConfiguration]
             )
-            initError = nil
+            errorMessage = nil
         } catch {
-            modelContainer = nil
-            initError = error.localizedDescription
+            container = nil
+            errorMessage = error.localizedDescription
+        }
+
+        modelContainer = container
+        initError = errorMessage
+
+        // Build the SettingsManager up front when the container is healthy. SettingsManager
+        // must be created on the main actor; IChingApp.init() runs on the main actor by
+        // virtue of being the @main App, so it's safe.
+        if let container {
+            _settingsManager = State(initialValue: SettingsManager(modelContext: container.mainContext))
+        } else {
+            _settingsManager = State(initialValue: nil)
         }
 
         // Enable file-level encryption for the SwiftData store
@@ -157,14 +173,10 @@ struct IChingApp: App {
                     .modelContainer(modelContainer)
                     .environment(\.settingsManager, settingsManager)
                     .environment(\.navigationCoordinator, NavigationCoordinator.shared)
-                    .environment(\.notificationService, NotificationService.shared)
-                    .environment(\.hexagramRepository, HexagramLibrary.shared)
-                    .environment(\.hapticService, HapticServiceAdapter())
-                    .onAppear {
-                        if settingsManager == nil {
-                            settingsManager = SettingsManager(modelContext: modelContainer.mainContext)
-                        }
-                    }
+                    // A-50: stateless services are bundled. The individual environment
+                    // keys remain available (with the same defaults) for tests that need
+                    // to override a single service.
+                    .environment(\.services, .default)
                     .onOpenURL { url in
                         NavigationCoordinator.shared.handle(url: url)
                     }

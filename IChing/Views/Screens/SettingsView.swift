@@ -4,94 +4,26 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.settingsManager) private var settingsManager
-    @Environment(\.notificationService) private var notificationService
-    @Environment(\.hapticService) private var hapticService
+    @Environment(\.services) private var services
 
-    /// Convenience accessor; force-unwrap is safe because SettingsManager
-    /// is always injected at the app root before any view appears.
-    private var settings: SettingsManager { settingsManager! }
+    private var notificationService: any NotificationServiceProtocol { services.notifications }
+
+    /// B-62: a single task that owns notification re-scheduling. Replacing it
+    /// cancels the previous attempt, so rapid toggle changes can't interleave
+    /// `cancel` and `schedule` operations in the wrong order.
+    @State private var notificationTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Daily Hexagram") {
-                    Toggle("Enable Daily Hexagram", isOn: Binding(
-                        get: { settings.dailyHexagramEnabled },
-                        set: { settings.dailyHexagramEnabled = $0 }
-                    ))
-                    
-                    if settings.dailyHexagramEnabled {
-                        DatePicker(
-                            "Notification Time",
-                            selection: Binding(
-                                get: { settings.dailyNotificationTime },
-                                set: { settings.dailyNotificationTime = $0 }
-                            ),
-                            displayedComponents: .hourAndMinute
-                        )
-                    }
-                }
-                
-                Section("Display") {
-                    Picker("Appearance", selection: Binding(
-                        get: { settings.appColorScheme },
-                        set: { settings.appColorScheme = $0 }
-                    )) {
-                        ForEach(AppColorScheme.allCases, id: \.self) { scheme in
-                            Text(scheme.displayName).tag(scheme)
-                        }
-                    }
-
-                    Toggle("Show Chinese Characters", isOn: Binding(
-                        get: { settings.showChineseCharacters },
-                        set: { settings.showChineseCharacters = $0 }
-                    ))
-
-                    Toggle("Show Pinyin", isOn: Binding(
-                        get: { settings.showPinyin },
-                        set: { settings.showPinyin = $0 }
-                    ))
-                }
-                
-                Section("Feedback") {
-                    #if os(iOS)
-                    Toggle("Haptic Feedback", isOn: Binding(
-                        get: { settings.hapticFeedbackEnabled },
-                        set: { settings.hapticFeedbackEnabled = $0 }
-                    ))
-                    #endif
-                    
-                }
-                
-                Section {
-                    HStack {
-                        Label("iCloud Sync", systemImage: "icloud")
-                        Spacer()
-                        Text("Coming Soon")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text("Privacy & Data")
-                } footer: {
-                    Text("All data stays on this device only. iCloud sync is planned for a future update.")
-                }
-
-                Section("About") {
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    NavigationLink("About the I Ching") {
-                        AboutIChingView()
-                    }
-                    
-                    NavigationLink("Acknowledgments") {
-                        AcknowledgmentsView()
-                    }
+            Group {
+                if let settings = settingsManager {
+                    settingsForm(settings: settings)
+                } else {
+                    ContentUnavailableView(
+                        "Settings Unavailable",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text("The settings store failed to load. Try restarting the app.")
+                    )
                 }
             }
             .navigationTitle("Settings")
@@ -105,26 +37,118 @@ struct SettingsView: View {
                     }
                 }
             }
-            .onAppear {
-                // Sync haptic state on appear (SettingsManager also syncs on set)
-                var service = hapticService
-                service.isEnabled = settings.hapticFeedbackEnabled
-            }
-            .onChange(of: settings.dailyHexagramEnabled) { _, enabled in
-                Task {
-                    if enabled {
-                        await notificationService.scheduleDailyHexagram(at: settings.dailyNotificationTime)
-                    } else {
-                        notificationService.cancelDailyNotifications()
-                    }
-                }
-            }
-            .onChange(of: settings.dailyNotificationTime) { _, newTime in
+        }
+    }
+
+    @ViewBuilder
+    private func settingsForm(settings: SettingsManager) -> some View {
+        Form {
+            Section("Daily Hexagram") {
+                Toggle("Enable Daily Hexagram", isOn: Binding(
+                    get: { settings.dailyHexagramEnabled },
+                    set: { settings.dailyHexagramEnabled = $0 }
+                ))
+
                 if settings.dailyHexagramEnabled {
-                    Task {
-                        await notificationService.scheduleDailyHexagram(at: newTime)
+                    DatePicker(
+                        "Notification Time",
+                        selection: Binding(
+                            get: { settings.dailyNotificationTime },
+                            set: { settings.dailyNotificationTime = $0 }
+                        ),
+                        displayedComponents: .hourAndMinute
+                    )
+                }
+            }
+
+            Section("Display") {
+                Picker("Appearance", selection: Binding(
+                    get: { settings.appColorScheme },
+                    set: { settings.appColorScheme = $0 }
+                )) {
+                    ForEach(AppColorScheme.allCases, id: \.self) { scheme in
+                        Text(scheme.displayName).tag(scheme)
                     }
                 }
+
+                Toggle("Show Chinese Characters", isOn: Binding(
+                    get: { settings.showChineseCharacters },
+                    set: { settings.showChineseCharacters = $0 }
+                ))
+
+                Toggle("Show Pinyin", isOn: Binding(
+                    get: { settings.showPinyin },
+                    set: { settings.showPinyin = $0 }
+                ))
+            }
+
+            Section("Feedback") {
+                #if os(iOS)
+                Toggle("Haptic Feedback", isOn: Binding(
+                    get: { settings.hapticFeedbackEnabled },
+                    set: { settings.hapticFeedbackEnabled = $0 }
+                ))
+                #endif
+
+            }
+
+            Section {
+                HStack {
+                    Label("iCloud Sync", systemImage: "icloud")
+                    Spacer()
+                    Text("Coming Soon")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Privacy & Data")
+            } footer: {
+                Text("All data stays on this device only. iCloud sync is planned for a future update.")
+            }
+
+            Section("About") {
+                HStack {
+                    Text("Version")
+                    Spacer()
+                    Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")
+                        .foregroundStyle(.secondary)
+                }
+
+                NavigationLink("About the I Ching") {
+                    AboutIChingView()
+                }
+
+                NavigationLink("Acknowledgments") {
+                    AcknowledgmentsView()
+                }
+            }
+        }
+        .onAppear {
+            // B-60: SettingsManager.hapticFeedbackEnabled.setter already syncs the static,
+            // but on first appearance we need to seed it from whatever was persisted.
+            HapticService.isEnabled = settings.hapticFeedbackEnabled
+        }
+        .onChange(of: settings.dailyHexagramEnabled) { _, enabled in
+            scheduleNotificationTask(enabled: enabled, time: settings.dailyNotificationTime)
+        }
+        .onChange(of: settings.dailyNotificationTime) { _, newTime in
+            if settings.dailyHexagramEnabled {
+                scheduleNotificationTask(enabled: true, time: newTime)
+            }
+        }
+    }
+
+    /// B-62: cancels any in-flight notification work before kicking off the new one.
+    /// Without this, rapid toggle changes can interleave cancel/schedule operations
+    /// and leave notifications in a state that doesn't match the toggle.
+    private func scheduleNotificationTask(enabled: Bool, time: Date) {
+        notificationTask?.cancel()
+        let service = notificationService
+        notificationTask = Task {
+            if enabled {
+                await service.scheduleDailyHexagram(at: time)
+            } else {
+                service.cancelDailyNotifications()
             }
         }
     }
@@ -198,21 +222,31 @@ struct AcknowledgmentsView: View {
 
 private struct SettingsViewPreview: View {
     @State private var manager: SettingsManager?
-    let container: ModelContainer
+    let container: ModelContainer?
 
     init() {
-        container = try! ModelContainer(for: AppSettings.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        do {
+            container = try ModelContainer(for: AppSettings.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        } catch {
+            container = nil
+        }
     }
 
     var body: some View {
-        SettingsView()
-            .modelContainer(container)
-            .environment(\.settingsManager, manager)
-            .onAppear {
-                if manager == nil {
-                    manager = SettingsManager(modelContext: container.mainContext)
-                }
+        Group {
+            if let container {
+                SettingsView()
+                    .modelContainer(container)
+                    .environment(\.settingsManager, manager)
+                    .onAppear {
+                        if manager == nil {
+                            manager = SettingsManager(modelContext: container.mainContext)
+                        }
+                    }
+            } else {
+                Text("Preview failed: could not create ModelContainer")
             }
+        }
     }
 }
 

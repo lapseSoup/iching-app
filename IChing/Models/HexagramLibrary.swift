@@ -8,6 +8,22 @@ protocol HexagramRepository {
     var hexagrams: [Hexagram] { get }
 }
 
+/// Process-wide overridable hexagram repository.
+///
+/// A-44: SwiftData's `@Model` types cannot accept non-storage init parameters, so
+/// `Reading.init`, `Reading.create`, and the type-level `Hexagram.from` factory cannot
+/// receive a repository through dependency injection. Instead, every default code path
+/// consults `Hexagrams.current` — a single mutable global that tests can swap in their
+/// setUp to redirect every consumer at once. Production never reassigns it; the default
+/// is `HexagramLibrary.shared`.
+///
+/// `nonisolated(unsafe)` is safe here because reassignment only happens in test setUp
+/// (on the main actor, before any concurrent reads). For tests that exercise concurrent
+/// code, prefer the explicit `using:` parameter on `Hexagram.from` / `Hexagram.transformed`.
+enum Hexagrams {
+    nonisolated(unsafe) static var current: any HexagramRepository = HexagramLibrary.shared
+}
+
 // MARK: - JSON Decoding Types
 
 /// Codable representation of a hexagram for JSON loading

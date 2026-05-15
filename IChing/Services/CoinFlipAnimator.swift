@@ -28,6 +28,10 @@ final class CoinFlipAnimator {
                     timer.invalidate()
                     return
                 }
+                // B-54: Guard against re-entry — under main-thread contention, multiple ticks
+                // can enqueue tasks before any executes. Once we've reached flipCount we must
+                // refuse further work or onComplete fires multiple times with fresh randomness.
+                guard flips < self.flipCount else { return }
 
                 flips += 1
 

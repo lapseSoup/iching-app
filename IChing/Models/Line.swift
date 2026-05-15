@@ -46,14 +46,15 @@ enum LineValue: Int, Codable, CaseIterable {
         }
     }
     
-    /// Create from coin flip result (number of heads: 0-3)
+    /// Create from coin flip result (number of heads: 0-3).
+    /// `heads` must be in `0...3`; out-of-range input is a programmer error and traps.
     static func from(heads: Int) -> LineValue {
+        precondition((0...3).contains(heads), "LineValue.from(heads:) requires heads in 0...3, got \(heads)")
         switch heads {
         case 0: return .oldYin    // 0 heads (2+2+2) = 6
         case 1: return .youngYang // 1 head  (3+2+2) = 7
         case 2: return .youngYin  // 2 heads (3+3+2) = 8
-        case 3: return .oldYang   // 3 heads (3+3+3) = 9
-        default: return .youngYang
+        default: return .oldYang  // 3 heads (3+3+3) = 9
         }
     }
 }

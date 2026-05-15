@@ -253,14 +253,12 @@ struct DivineView: View {
         ) {
         case .success(let reading):
             modelContext.insert(reading)
-            do {
-                try modelContext.save()
-                navigateToReading = reading
-            } catch {
-                modelContext.rollback()
-                AppLogger.persistence.error("Failed to save reading: \(error.localizedDescription, privacy: .private)")
+            var didFail = false
+            modelContext.safeSave(operation: "save reading") { error in
+                didFail = true
                 saveError = IChingError.saveFailed(underlying: error).localizedDescription
             }
+            if !didFail { navigateToReading = reading }
         case .failure(let error):
             saveError = error.localizedDescription
         }

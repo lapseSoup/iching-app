@@ -40,6 +40,9 @@ struct HistoryView: View {
     @State private var searchText = ""
     @State private var deleteError: String?
     @State private var groupedReadings: [(String, [Reading])] = []
+    /// B-57: tracks whether `groupedReadings` has been seeded at least once so the
+    /// initial render doesn't flash an empty list while .onAppear is pending.
+    @State private var hasComputedGroups = false
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
         _showingSettings = showingSettings
@@ -57,27 +60,31 @@ struct HistoryView: View {
 
     private func recomputeGroupedReadings() {
         groupedReadings = groupReadingsByDate(filteredReadings)
+        hasComputedGroups = true
     }
-    
+
     var body: some View {
         NavigationStack {
             Group {
                 if readings.isEmpty {
                     emptyState
-                } else {
+                } else if hasComputedGroups {
                     readingsList
+                } else {
+                    // First render: compute synchronously so we never show an empty
+                    // List inside the non-empty branch.
+                    Color.clear.onAppear { recomputeGroupedReadings() }
                 }
             }
             .navigationTitle("History")
             .searchable(text: $searchText, prompt: "Search readings")
             .errorAlert($deleteError, title: "Delete Error")
             .settingsToolbarButton(showingSettings: $showingSettings)
-            .onAppear { recomputeGroupedReadings() }
             .onChange(of: readings) { recomputeGroupedReadings() }
             .onChange(of: searchText) { recomputeGroupedReadings() }
         }
     }
-    
+
     private var emptyState: some View {
         ContentUnavailableView(
             "No Readings Yet",
@@ -85,7 +92,7 @@ struct HistoryView: View {
             description: Text("Your reading history will appear here")
         )
     }
-    
+
     private var readingsList: some View {
         List {
             ForEach(groupedReadings, id: \.0) { section in
@@ -114,16 +121,12 @@ struct HistoryView: View {
             JournalEntryDetailView(entry: entry)
         }
     }
-    
+
     private func deleteReadings(at offsets: IndexSet, in readings: [Reading]) {
         for index in offsets {
             modelContext.delete(readings[index])
         }
-        do {
-            try modelContext.save()
-        } catch {
-            modelContext.rollback()
-            AppLogger.persistence.error("Failed to delete readings: \(error.localizedDescription, privacy: .private)")
+        modelContext.safeSave(operation: "delete readings") { error in
             deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
         }
     }

@@ -54,6 +54,7 @@
 		F1100008 /* NavigationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2100008; };
 		F1100009 /* ReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2100009; };
 		F1100010 /* TrigramTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2100010; };
+		F1100011 /* ViewIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2100011; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,6 +118,7 @@
 		F2100008 /* NavigationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationCoordinatorTests.swift; sourceTree = "<group>"; };
 		F2100009 /* ReadingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingTests.swift; sourceTree = "<group>"; };
 		F2100010 /* TrigramTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrigramTests.swift; sourceTree = "<group>"; };
+		F2100011 /* ViewIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewIntegrationTests.swift; sourceTree = "<group>"; };
 		F2100099 /* IChingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IChingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -286,6 +288,7 @@
 				F2100008 /* NavigationCoordinatorTests.swift */,
 				F2100009 /* ReadingTests.swift */,
 				F2100010 /* TrigramTests.swift */,
+				F2100011 /* ViewIntegrationTests.swift */,
 			);
 			path = IChingTests;
 			sourceTree = "<group>";
@@ -435,6 +438,7 @@
 				F1100008 /* NavigationCoordinatorTests.swift in Sources */,
 				F1100009 /* ReadingTests.swift in Sources */,
 				F1100010 /* TrigramTests.swift in Sources */,
+				F1100011 /* ViewIntegrationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -32,14 +32,17 @@ final class HexagramBasicDataTests: XCTestCase {
     // MARK: - Cross-Source Consistency
 
     /// Validates that hexagram_basic.json stays consistent with the richer hexagrams.json
-    /// used by HexagramLibrary. Both files must agree on names, characters, and line patterns.
+    /// used by HexagramLibrary on the *invariant* fields (id, chinese name, character, line pattern).
+    /// The `englishName` field is deliberately allowed to diverge — hexagrams.json carries verbose
+    /// academic translations ("Waiting (Nourishment)") while hexagram_basic.json carries shorter
+    /// widget-friendly names ("Waiting"). Both files are curated separately on that axis.
+    /// See scripts/generate_hexagram_basic.swift for the build-time drift check.
     func testBasicDataMatchesLibrary() {
         for basic in HexagramBasicInfo.all {
             guard let full = HexagramLibrary.shared.hexagram(number: basic.id) else {
                 XCTFail("HexagramLibrary missing hexagram \(basic.id)")
                 continue
             }
-            XCTAssertEqual(basic.englishName, full.englishName, "Name mismatch for hexagram \(basic.id)")
             XCTAssertEqual(basic.chineseName, full.chineseName, "Chinese name mismatch for hexagram \(basic.id)")
             XCTAssertEqual(basic.character, full.character, "Character mismatch for hexagram \(basic.id)")
             XCTAssertEqual(basic.lines, full.lines, "Lines mismatch for hexagram \(basic.id)")

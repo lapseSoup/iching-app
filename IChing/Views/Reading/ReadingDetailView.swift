@@ -4,9 +4,11 @@ import SwiftData
 struct ReadingDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let reading: Reading
-    
+
     @State private var showingJournalEditor = false
     @State private var selectedTab: HexagramTextSection = .judgment
+    /// Q-66: cache the sorted journal entries so we don't re-sort on every body re-evaluation.
+    @State private var sortedJournalEntries: [JournalEntry] = []
     
     var body: some View {
         ScrollView {
@@ -40,6 +42,12 @@ struct ReadingDetailView: View {
         .sheet(isPresented: $showingJournalEditor) {
             JournalEditorView(reading: reading)
         }
+        .onAppear { recomputeSortedEntries() }
+        .onChange(of: reading.journalEntries) { recomputeSortedEntries() }
+    }
+
+    private func recomputeSortedEntries() {
+        sortedJournalEntries = reading.journalEntries.sorted(by: { $0.createdAt > $1.createdAt })
     }
     
     // MARK: - Header
@@ -189,13 +197,13 @@ struct ReadingDetailView: View {
             }
             .foregroundStyle(.secondary)
             
-            if reading.journalEntries.isEmpty {
+            if sortedJournalEntries.isEmpty {
                 Text("No reflections yet. Tap + to add your thoughts.")
                     .font(.subheadline)
                     .foregroundStyle(.tertiary)
                     .padding()
             } else {
-                ForEach(reading.journalEntries.sorted(by: { $0.createdAt > $1.createdAt })) { entry in
+                ForEach(sortedJournalEntries) { entry in
                     NavigationLink(value: entry) {
                         JournalEntryRow(entry: entry)
                     }

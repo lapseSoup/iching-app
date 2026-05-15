@@ -47,7 +47,7 @@ final class CoinFlipAnimatorTests: XCTestCase {
 
     func testOnIntermediateFlip_isCalledBeforeCompletion() {
         let flipExpectation = expectation(description: "intermediate flip called")
-        flipExpectation.assertForOverInFulfillment = false
+        flipExpectation.assertForOverFulfill = false
 
         animator.onIntermediateFlip = { coins in
             XCTAssertEqual(coins.count, 3)
@@ -129,7 +129,7 @@ final class CoinFlipAnimatorTests: XCTestCase {
 
     func testIntermediateFlip_returnsBoolArray() {
         let flipExpectation = expectation(description: "intermediate flip")
-        flipExpectation.assertForOverInFulfillment = false
+        flipExpectation.assertForOverFulfill = false
 
         animator.onIntermediateFlip = { coins in
             // Each coin is a Bool (heads/tails); verify the array structure

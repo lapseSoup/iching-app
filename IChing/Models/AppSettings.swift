@@ -59,14 +59,4 @@ final class AppSettings {
         self.colorScheme = .system
         self.iCloudSyncEnabled = false
     }
-
-    var readingMethod: ReadingMethod {
-        get { defaultReadingMethod }
-        set { defaultReadingMethod = newValue }
-    }
-
-    var appColorScheme: AppColorScheme {
-        get { colorScheme }
-        set { colorScheme = newValue }
-    }
 }

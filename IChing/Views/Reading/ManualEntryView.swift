@@ -4,7 +4,7 @@ struct ManualEntryView: View {
     @Environment(\.dismiss) private var dismiss
     let viewModel: DivineViewModel
     
-    @State private var lines: [LineValue] = Array(repeating: .youngYang, count: 6)
+    @State private var lines: [LineValue] = Array(repeating: .youngYang, count: Reading.lineCount)
     
     var body: some View {
         NavigationStack {
@@ -14,7 +14,7 @@ struct ManualEntryView: View {
                     .foregroundStyle(.secondary)
                 
                 VStack(spacing: 16) {
-                    ForEach((0..<6).reversed(), id: \.self) { index in
+                    ForEach((0..<Reading.lineCount).reversed(), id: \.self) { index in
                         lineRow(index: index)
                     }
                 }

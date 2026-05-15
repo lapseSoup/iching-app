@@ -29,8 +29,17 @@ struct JournalEditorView: View {
                     TextEditor(text: $content)
                         .frame(minHeight: 200)
                         .onChange(of: content) { _, newValue in
-                            if newValue.count > 10_000 {
-                                content = String(newValue.prefix(10_000))
+                            // S-29: Match the sanitization DivineView applies to questions —
+                            // strip Cc/Cf control chars, keep newlines/tabs/CR, cap length.
+                            let sanitized = String(newValue.unicodeScalars.filter { scalar in
+                                if scalar == "\n" || scalar == "\t" || scalar == "\r" { return true }
+                                if CharacterSet.controlCharacters.contains(scalar) { return false }
+                                if scalar.properties.generalCategory == .format { return false }
+                                return true
+                            })
+                            let trimmed = sanitized.count > 10_000 ? String(sanitized.prefix(10_000)) : sanitized
+                            if trimmed != newValue {
+                                content = trimmed
                             }
                         }
                 } header: {
@@ -116,14 +125,12 @@ struct JournalEditorView: View {
             modelContext.insert(entry)
         }
 
-        do {
-            try modelContext.save()
-            dismiss()
-        } catch {
-            modelContext.rollback()
-            AppLogger.persistence.error("Failed to save journal entry: \(error.localizedDescription, privacy: .private)")
+        var didFail = false
+        modelContext.safeSave(operation: "save journal entry") { error in
+            didFail = true
             saveError = IChingError.saveFailed(underlying: error).localizedDescription
         }
+        if !didFail { dismiss() }
     }
 }
 
@@ -224,14 +231,12 @@ struct JournalEntryDetailView: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 modelContext.delete(entry)
-                do {
-                    try modelContext.save()
-                    dismiss()
-                } catch {
-                    modelContext.rollback()
-                    AppLogger.persistence.error("Failed to delete journal entry: \(error.localizedDescription, privacy: .private)")
+                var didFail = false
+                modelContext.safeSave(operation: "delete journal entry") { error in
+                    didFail = true
                     deleteError = IChingError.deleteFailed(underlying: error).localizedDescription
                 }
+                if !didFail { dismiss() }
             }
         } message: {
             Text("This cannot be undone.")

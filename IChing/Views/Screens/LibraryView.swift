@@ -4,17 +4,16 @@ struct LibraryView: View {
     @Binding var showingSettings: Bool
     @State private var searchText = ""
     @State private var path = NavigationPath()
+    @State private var filteredHexagrams: [Hexagram] = []
 
     @Environment(\.settingsManager) private var settingsManager
     @Environment(\.navigationCoordinator) private var navigationCoordinator
-    @Environment(\.hexagramRepository) private var hexagramRepository
+    @Environment(\.services) private var services
+
+    private var hexagramRepository: any HexagramRepository { services.hexagrams }
 
     private var showChineseCharacters: Bool {
         settingsManager?.showChineseCharacters ?? true
-    }
-
-    private var showPinyin: Bool {
-        settingsManager?.showPinyin ?? true
     }
 
     init(showingSettings: Binding<Bool> = .constant(false)) {
@@ -23,15 +22,26 @@ struct LibraryView: View {
 
     private var hexagrams: [Hexagram] { hexagramRepository.hexagrams }
 
-    private var filteredHexagrams: [Hexagram] {
+    private func recomputeFiltered() {
         if searchText.isEmpty {
-            return hexagrams
+            filteredHexagrams = hexagrams
+        } else {
+            filteredHexagrams = hexagrams.filter { hex in
+                hex.englishName.localizedCaseInsensitiveContains(searchText) ||
+                hex.chineseName.contains(searchText) ||
+                hex.pinyin.localizedCaseInsensitiveContains(searchText) ||
+                String(hex.id).contains(searchText)
+            }
         }
-        return hexagrams.filter { hex in
-            hex.englishName.localizedCaseInsensitiveContains(searchText) ||
-            hex.chineseName.contains(searchText) ||
-            hex.pinyin.localizedCaseInsensitiveContains(searchText) ||
-            String(hex.id).contains(searchText)
+    }
+
+    /// Consumes any pending deep-link hexagram and pushes it onto the navigation path.
+    /// B-56: called from both `.onAppear` (handles cold-start / macOS-switch) and
+    /// `.onChange` (handles deep links arriving while the view is already visible).
+    private func consumePendingNavigation() {
+        if let id = navigationCoordinator.consumePendingHexagram(),
+           let hexagram = hexagramRepository.hexagram(number: id) {
+            path.append(hexagram)
         }
     }
 
@@ -60,11 +70,13 @@ struct LibraryView: View {
             .navigationDestination(for: Hexagram.self) { hexagram in
                 HexagramDetailView(hexagram: hexagram)
             }
+            .onAppear {
+                recomputeFiltered()
+                consumePendingNavigation()
+            }
+            .onChange(of: searchText) { recomputeFiltered() }
             .onChange(of: navigationCoordinator.pendingHexagramId) { _, _ in
-                if let id = navigationCoordinator.consumePendingHexagram(),
-                   let hexagram = hexagramRepository.hexagram(number: id) {
-                    path.append(hexagram)
-                }
+                consumePendingNavigation()
             }
         }
     }

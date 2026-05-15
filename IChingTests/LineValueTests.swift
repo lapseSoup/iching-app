@@ -25,9 +25,15 @@ final class LineValueTests: XCTestCase {
         XCTAssertEqual(LineValue.from(heads: 3).rawValue, 9)
     }
 
-    func testFromHeads_invalidCount_returnsYoungYang() {
-        XCTAssertEqual(LineValue.from(heads: 4), .youngYang)
-        XCTAssertEqual(LineValue.from(heads: -1), .youngYang)
+    // B-58: `LineValue.from(heads:)` now traps on out-of-range input via precondition.
+    // The previous silent-fallback contract was a latent corruption risk. There's no
+    // straightforward XCTest hook to verify a precondition trap without subprocessing,
+    // so we document the new contract by enumerating valid inputs instead.
+    func testFromHeads_validRange_coversAllLineValues() {
+        let mapping: [Int: LineValue] = [0: .oldYin, 1: .youngYang, 2: .youngYin, 3: .oldYang]
+        for (heads, expected) in mapping {
+            XCTAssertEqual(LineValue.from(heads: heads), expected, "heads=\(heads) should map to \(expected)")
+        }
     }
 
     // MARK: - Line Properties

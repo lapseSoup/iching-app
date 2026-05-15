@@ -3,15 +3,10 @@ import SwiftUI
 struct HexagramDetailView: View {
     let hexagram: Hexagram
 
-    @Environment(\.settingsManager) private var settingsManager
+    @Environment(\.settings) private var settings
 
-    private var showChinese: Bool {
-        settingsManager?.showChineseCharacters ?? true
-    }
-
-    private var showPinyin: Bool {
-        settingsManager?.showPinyin ?? true
-    }
+    private var showChinese: Bool { settings.showChineseCharacters }
+    private var showPinyin: Bool { settings.showPinyin }
 
     @State private var selectedTab: HexagramTextSection = .judgment
     
